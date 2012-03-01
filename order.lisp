@@ -1,3 +1,6 @@
+;;; -*- Mode: LISP; Syntax: COMMON-LISP; Base: 10 -*-
+;;; Copyright (c) 2012, Tiarnán Ó Corráin  All rights reserved.
+
 (in-package #:shopper)
 
 (let ((order-counter 1))
