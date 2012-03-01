@@ -6,7 +6,8 @@
   :serial t
   :depends-on (:hunchentoot
 	       :elephant
-	       :cl-who)
+	       :cl-who
+	       :alexandria)
   :components ((:file "package")
 	       (:file "item")
                (:file "qlist")
