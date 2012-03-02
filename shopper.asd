@@ -9,6 +9,8 @@
 	       :cl-who
 	       :alexandria)
   :components ((:file "package")
+	       (:file "store")
 	       (:file "item")
                (:file "qlist")
-               (:file "cart")))
+               (:file "cart")
+	       (:file "web")))
