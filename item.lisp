@@ -20,7 +20,7 @@
    (categories :initarg :categories :initform '() :accessor categories
 	       :documentation "A list of categories or tags into which this item falls"
 	       :type list)
-   (sku :initarg :sku :initform "" :accessor sku :index t
+   (sku :initarg :sku :initform nil :accessor sku :index t
 	:documentation "Stock-keeping unit ID" :type string)
    (meta :initarg :meta :initform '() :accessor meta
 	 :documentation "Meta tags to be added to page for HTML searchability" :type list)
