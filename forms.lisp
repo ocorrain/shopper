@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Syntax: COMMON-LISP; Base: 10 -*-
+;;; -*- Mode: LISP; Syntax: COMMON-LISP -*-
 ;;; Copyright (c) 2012, Tiarnán Ó Corráin  All rights reserved.
 
 (in-package #:shopper)
@@ -21,8 +21,6 @@
      (generic-line-item-fields stream line-item)
      (submit-button "Next >>" s))))
 
-
-
 (defun get-url (line-item)
   (format nil "item/~A" (sku line-item)))
 
@@ -39,6 +37,48 @@
 		  (when line-item (featured line-item)))
     (textfield "packing-weight" s "The extra weight of packaging for this item: packing weight + item weight (the next field equals the total shipping weight"
 	       (when line-item (packing-weight line-item)))))
+
+(defun validate-generic-line-item-fields (alist)
+  (flet ((assoc-val (val) (cdr (assoc val alist))))
+    (let ((errors '())
+	  (title (validate-as-string (assoc-val "title")))
+	  (short-description (validate-as-string (assoc-val "short-description") t))
+	  (long-description (validate-as-string (assoc-val "long-description") t))
+	  (packing-weight (validate-number (assoc-val "packing-weight"))))
+      (when (null title) (push 'title errors))
+      (when (null short-description) (push 'short-description errors))
+      (when (null long-description) (push 'long-description errors))
+      (when (null packing-weight) (push 'packing-weight errors))
+      (values title short-description long-description packing-weight published featured
+	      errors))))
+
+(defun validate-single-item-fields (alist)
+  (flet ((assoc-val (val) (cdr (assoc val alist))))
+    (let ((errors '())
+	  (weight (validate-number (assoc-val "weight")))
+	  (price (validate-number (assoc-val "price"))))
+      (when (null weight) (push 'weight errors))
+      (when (null price) (push 'price errors))
+      (values weight price errors))))
+
+(defun validate-as-string (thing &optional allow-empty)
+  (and (stringp thing)
+       (let ((trimmed (string-trim '(#\Space #\Tab #\Newline #\Return #\Linefeed)
+				   thing)))
+	 (if (not allow-empty)
+	     (unless (zerop (length trimmed))
+	       trimmed)
+	     trimmed))))
+
+(defun validate-number (thing &optional allow-negative)
+  (cond ((integerp thing) (if (minusp thing)
+			      (when allow-negative
+				thing)
+			      thing))
+	((stringp thing) (when-let (parsed (parse-integer thing :junk-allowed t))
+			   (validate-number parsed)))
+	(t nil)))
+
 
 
 (defun textfield (name stream label default-value)
