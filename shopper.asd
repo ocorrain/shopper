@@ -7,10 +7,18 @@
   :depends-on (:hunchentoot
 	       :elephant
 	       :cl-who
-	       :alexandria)
+	       :alexandria
+	       :url-rewrite
+	       :lisp-magick
+	       :cl-fad)
   :components ((:file "package")
-	       (:file "store")
 	       (:file "item")
+	       (:file "images")
+	       (:file "store")
                (:file "qlist")
                (:file "cart")
-	       (:file "forms")))
+	       (:file "forms")
+	       (:file "validation")
+	       (:file "pages")
+	       (:file "inventory")
+	       (:file "js")))

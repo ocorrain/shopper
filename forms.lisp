@@ -21,8 +21,13 @@
      (generic-line-item-fields stream line-item)
      (submit-button "Next >>" s))))
 
-(defun get-url (line-item)
-  (format nil "item/~A" (sku line-item)))
+(defun image-form (stream line-item)
+  (with-html-output (s stream :indent t)
+    ((:form :action (get-url line-item) :method :post :enctype "multipart/form-data")
+     ((:label :for "picture") "Upload an image")
+     (:input :type "file" :name "picture" :class "text")
+     (:input :type "submit" :value "Upload" :class "text"))))
+
 
 (defun generic-line-item-fields (stream &optional line-item)
   (with-html-output (s stream :indent t)
@@ -31,68 +36,29 @@
 	       (when line-item (short-description line-item)))
     (textarea "long-description" s "A paragraph length description of the item"
 	      (when line-item (long-description line-item)))
-    (radio-button "published" s "Is this item to be published on the web?"
+    (checkbox "published" s "Published?"
 		  (when line-item (published line-item)))
-    (radio-button "featured" s "Is this item to be featured?"
+    (checkbox "featured" s "Featured?"
 		  (when line-item (featured line-item)))
     (textfield "packing-weight" s "The extra weight of packaging for this item: packing weight + item weight (the next field equals the total shipping weight"
 	       (when line-item (packing-weight line-item)))))
-
-(defun validate-generic-line-item-fields (alist)
-  (flet ((assoc-val (val) (cdr (assoc val alist))))
-    (let ((errors '())
-	  (title (validate-as-string (assoc-val "title")))
-	  (short-description (validate-as-string (assoc-val "short-description") t))
-	  (long-description (validate-as-string (assoc-val "long-description") t))
-	  (packing-weight (validate-number (assoc-val "packing-weight"))))
-      (when (null title) (push 'title errors))
-      (when (null short-description) (push 'short-description errors))
-      (when (null long-description) (push 'long-description errors))
-      (when (null packing-weight) (push 'packing-weight errors))
-      (values title short-description long-description packing-weight published featured
-	      errors))))
-
-(defun validate-single-item-fields (alist)
-  (flet ((assoc-val (val) (cdr (assoc val alist))))
-    (let ((errors '())
-	  (weight (validate-number (assoc-val "weight")))
-	  (price (validate-number (assoc-val "price"))))
-      (when (null weight) (push 'weight errors))
-      (when (null price) (push 'price errors))
-      (values weight price errors))))
-
-(defun validate-as-string (thing &optional allow-empty)
-  (and (stringp thing)
-       (let ((trimmed (string-trim '(#\Space #\Tab #\Newline #\Return #\Linefeed)
-				   thing)))
-	 (if (not allow-empty)
-	     (unless (zerop (length trimmed))
-	       trimmed)
-	     trimmed))))
-
-(defun validate-number (thing &optional allow-negative)
-  (cond ((integerp thing) (if (minusp thing)
-			      (when allow-negative
-				thing)
-			      thing))
-	((stringp thing) (when-let (parsed (parse-integer thing :junk-allowed t))
-			   (validate-number parsed)))
-	(t nil)))
 
 
 
 (defun textfield (name stream label default-value)
   (with-html-output (s stream :indent t)
     ((:label :for name) (str label)) (:br)
-    (:input :type "text" :name name
+    (:input :type "text" :name name :class "text"
 	    :value (if default-value (if (stringp default-value)
 					 (escape-string-all default-value)
-					 default-value)  ""))))
+					 default-value)  ""))
+    (:br)))
 
 (defun textarea (name stream label default-value)
   (with-html-output (s stream :indent t)
     ((:label :for name) (str label)) (:br)
-    ((:textarea :name name) (if default-value (str default-value) (str "")))))
+    ((:textarea :name name :class "text") (if default-value (str default-value) (str "")))
+    (:br)))
 
 (defun radio-button (name stream label default-value)
   (with-html-output (s stream :indent t)
@@ -103,10 +69,20 @@
 	(htm (:input :type "radio" :name name :id "true" :value "true")))
     ((:label :for "false") "No")
     (if default-value
-	(htm (:input :type "radio" :name name :id "false" :value "true"))
-	(htm (:input :type "radio" :name name :id "false" :value "true" :checked "checked")))))
+	(htm (:input :type "radio" :name name :id "false" :value "false"))
+	(htm (:input :type "radio" :name name :id "false" :value "false" :checked "checked")))
+    (:br)))
+
+(defun checkbox (name stream label default-value)
+  (with-html-output (s stream :indent t)
+    ((:label :for name) (str label)) 
+    (if default-value
+	(htm (:input :type "checkbox" :name name :value "true" :checked "checked"))
+	(htm (:input :type "checkbox" :name name :value "true")))
+    (:br)))
 
 (defun submit-button (label stream)
   (with-html-output (s stream :indent t)
     (:br)
-    (:input :type "submit" :name "submit" :value label)))
+    (:input :type "submit" :name "submit" :value label :class "text")
+    (:br)))

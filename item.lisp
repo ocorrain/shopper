@@ -4,30 +4,49 @@
 (in-package #:shopper)
 
 (ele:defpclass line-item ()
-  ((title :initarg :title :initform "" :accessor title :index t
+  ((title :initarg :title :initform ""
+	  :accessor title :index t
 	  :documentation "Title or name of the line item" :type string)
    (short-description :initarg :short-description :initform ""
 		      :accessor short-description
-		      :documentation "A one-line description of the item" :type string)
+		      :documentation "A one-line description of the item"
+		      :type string)
    (long-description :initarg :long-description :initform ""
 		     :accessor long-description
-		     :documentation "A long (paragraph length) description of the item"
+		     :documentation "A long (paragraph length)
+		     description of the item"
 		     :type string)
-   (packing-weight :initarg :packing-weight :initform 0 :accessor packing-weight
+   (packing-weight :initarg :packing-weight
+		   :initform 0 :accessor packing-weight
 		   :documentation "The extra weight of packaging:
 		   ie. packing-weight + weight equals the total
 		   shipping weight")
-   (categories :initarg :categories :initform '() :accessor categories
-	       :documentation "A list of categories or tags into which this item falls"
+   (categories :initarg :categories :initform '()
+	       :accessor categories
+	       :documentation "A list of categories or tags into which
+	       this item falls"
 	       :type list)
-   (sku :initarg :sku :initform nil :accessor sku :index t
-	:documentation "Stock-keeping unit ID" :type string)
+   (sku  :initarg :sku :initform nil :accessor sku
+	:index t :documentation "Stock-keeping unit ID"
+	:type string)
    (meta :initarg :meta :initform '() :accessor meta
-	 :documentation "Meta tags to be added to page for HTML searchability" :type list)
-   (featured :initarg :featured :initform nil :accessor featured :type boolean :index t
-	     :documentation "Is this to be published to the front-page / featured page?")
-   (published :initarg :published :initform nil :accessor published :index t
-	      :documentation "Is this to be published to the site?" :type boolean)))
+	 :documentation "Meta tags to be added to page for HTML
+	 searchability"
+	 :type list)
+   (featured :initarg :featured :initform nil :accessor featured
+	     :type boolean :index t
+	     :documentation "Is this to be published to the front-page
+	     / featured page?")
+   (published :initarg :published :initform nil
+	      :accessor published :index t
+	      :documentation "Is this to be published to the site?"
+	      :type boolean)
+   (images :initform '() :accessor images
+	   :documentation "List of images of this item"
+	   :type list)
+   (image-counter :initform 0 :accessor image-counter
+		  :documentation "counter for image filenames"
+		  :type number)))
 
 (ele:defpclass single-item (line-item)
   ((weight :initarg :weight :initform 0 :accessor weight
@@ -39,21 +58,26 @@
   ((discount :initarg :discount :initform 0 :accessor discount
 	     :documentation "Percentage discount for a bundle")))
 
+
+(defun get-item (sku)
+  (ele:get-value sku (items *web-store*)))
+
 (defmethod get-price ((item single-item))
   (price item))
+
+(defmethod get-next-image-stub ((item line-item))
+  (prog1
+      (format nil "~A_~A" (sku item) (image-counter item))
+    (incf (image-counter item))))
+
+
+(defun get-url (line-item)
+  (url-rewrite:add-get-param-to-url "/item" "sku" (sku line-item)))
 
 (defmethod get-price :around ((bundle bundle))
   "Applies the bundle discount"
   (let ((initial-price (call-next-method)))
     (round (* initial-price (/ (- 100 (discount bundle)) 100)))))
-
-(let ((sku-counter 1))
-  (defun get-next-sku ()
-    (prog1
-	(format nil "SKU~7,'0d" sku-counter)
-      (incf sku-counter)))
-  (defun reset-sku-counter ()
-    (setf sku-counter 1)))
 
 (defvar *words* (make-array 98569))
 
@@ -88,7 +112,6 @@
 		 :weight (random 2000)
 		 :price (random 10000)
 		 :categories (random-word-list 10)
-		 :sku (get-next-sku)
 		 :meta (random-word-list 10)
 		 :featured (flip)
 		 :published (flip))))
@@ -104,3 +127,4 @@
 
 (defun delete-items-test ()
   (ele:drop-instances (ele:get-instances-by-class 'line-item)))
+
