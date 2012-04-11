@@ -3,28 +3,56 @@
 
 (in-package #:shopper)
 
-(hunchentoot:define-easy-handler (index-page :uri "/index.html")
-    ()
-  (standard-page "Welcome to sample store"
-		 (lambda (stream)
-	       (display-table 5 (get-random-featured-items 20) #'display-short stream))))
+(defun css-links ()
+  (with-html-output-to-string (s nil :indent t)
+    (:link :rel "stylesheet" :href "/css/blueprint/screen.css"
+			 :type "text/css" :media "screen,projection")
+    (:link :rel "stylesheet" :href "/css/blueprint/print.css"
+	   :type "text/css" :media "print")
+    (:link :rel "stylesheet" :href "/css/blueprint/plugins/tabs/screen.css"
+	   :type "text/css" :media "screen,projection")
+    (:link :rel "stylesheet" :href "/styles/jquery.lightbox-0.5.css")
+    (:link :rel "stylesheet" :href "/styles/gallery.css")
+    (:link :rel "stylesheet" :href "/styles/shopper.css")
+		  (str "<!--[if lt IE 8]>
 
-(hunchentoot:define-easy-handler (display-tag :uri "/display-tag")
-    (name)
-  (when-let ((tag (get-tag name)))
-    (let ((items (get-tagged-items tag)))
-      (make-page (tag-name tag)
-		 (lambda (stream)
-		   (funcall (header (store-name *web-store*)
-				    (tag-name tag)) stream)
-		   (with-html-output (s stream)
-		     (:h2 "Bundles")
-		     (display-table 5 (remove 'single-item items :key #'type-of)
-				    #'display-short s)
-		     (:h2 "Single items")
-		     (display-table 5 (remove 'bundle items :key #'type-of)
-				    #'display-short s)))
-		 (sample-sidebar tag)))))
+    <link rel=\"stylesheet\" href=\"css/blueprint/ie.css\" type=\"text/css\" media=\"screen, projection\">
+
+<![endif]-->")))
+
+
+(defun make-page (title body-function &optional sidebar)
+  "BODY-FUNCTION takes a single argument, the stream S"
+  (with-html-output-to-string (s nil :prologue t :indent t)
+    (:html (:head (:title (str title))
+		  (str (css-links))
+		  (:script :type "text/javascript"
+			   :src "https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"))
+	   
+	   (:body ((:div :class "container")
+		   ((:a :href "#" :class "login_btn") "Login")
+		   ((:div :id "login_box")
+		    ((:form :action "/login")
+		     (:input :name "username" :type "text" :placeholder "Username")
+		     (:input :name "password" :type "password" :placeholder "Password")
+		     (:br)
+		     (:input :type "submit" :value "login")))
+		   (if sidebar
+		       (htm ((:div :id "sidebar" :class "span-6")
+			     (funcall sidebar s))
+			    ((:div :id "main" :class "span-18 last")
+			     (funcall (basic-menu) s)
+			     (funcall body-function s)))
+		       (htm ((:div :id "main")
+			     (funcall body-function s)))))
+		  (:script :type "text/javascript" :src "/js/login.js")))))
+
+(defun standard-page (title func)
+  (make-page title (lambda (stream)
+		     (funcall (header (store-name *web-store*)
+				      title) stream)
+		     (funcall func stream))
+	     (sample-sidebar nil)))
 
 (defun get-all-featured-items ()
   (append (ele:get-instances-by-value 'single-item 'featured t)
@@ -162,29 +190,6 @@
 	 (:input :type "submit" :value "Save")))
       "")))
 
-(hunchentoot:define-easy-handler (add-to-bundle-page :uri "/add-to-bundle")
-    ((bundleadd :parameter-type 'hash-table)
-     sku)
-  (standard-page "Debug"
-		 (lambda (stream)
-		   (with-html-output (s stream)
-		     (:p (fmt "~S" (hunchentoot:post-parameters*)))
-		     (:p (esc (format nil "~A" bundleadd)))
-		     (:p (str sku))
-		     (when-let ((bundle (get-item sku))
-				(items-to-add
-				 (let ((items '())) 
-				   (maphash (lambda (k v)
-					      (when-let (number (parse-integer
-								 v :junk-allowed t))
-						(push (cons (get-item k) number) items)))
-					    bundleadd)
-				   items)))
-		       (htm (esc (format nil "~S : ~S" bundle items-to-add)))
-		       (dolist (item items-to-add)
-			 (add-item (car item) bundle (cdr item)))
-		       (hunchentoot:redirect (get-url bundle)))))))
-
 
 
 (defun print-price (price-in-cents)
@@ -203,7 +208,8 @@
 (defmethod images-widget ((item line-item))
   (lambda (stream)
     (image-form stream item)
-    (edit-display-images item stream)))
+    (edit-display-images item stream)
+    ""))
 
 (defmethod tag-widget ((item line-item))
   (lambda (stream)
@@ -215,3 +221,93 @@
     (funcall (simple-bundle-list bundle) stream)
     (funcall (bundle-add-form bundle) stream)
     ""))
+
+(defun sample-sidebar (item)
+  (lambda (stream)
+    (with-html-output (s stream)
+      (:ul (:li ((:a :href "/index.html") "Home"))
+	   (:li ((:a :href "/single-item/new") "New single item"))
+	   (:li ((:a :href "/single-items") "List of single items"))
+	   (:li ((:a :href "/bundle/new") "New bundle"))
+	   (:li ((:a :href "/bundles") "List of bundles"))
+	   (:li ((:a :href "/shopping-cart") "View cart"))))
+    (list-of-tags (all-tags) stream)))
+
+
+(defun header (store-name title)
+  (lambda (stream)
+    (with-html-output (s stream)
+      ((:div :id "header")
+       ((:div :class "span-24 last")
+	(:h1 (str store-name))
+	(:h2 (str title)))))))
+
+(defmethod get-tabs ((item single-item))
+  (tabs (mapcar #'cons
+		(list "Display item" "Edit item" "Manage images" "Manage tags")
+		(list (display item) (edit-widget item) (images-widget item) (tag-widget item)))))
+
+(defmethod get-tabs ((item bundle))
+  (tabs (mapcar #'cons
+		(list "Display item" "Edit item" "Manage contents" "Manage images" "Manage tags")
+		(list (display item) (edit-widget item) (bundle-widget item)
+		      (images-widget item) (tag-widget item)))))
+
+
+
+(defmethod item-q-form ((item line-item) stream)
+  "Spits out a table with the following notation:
+     Quantity (form element with name of the sku) | SKU | Title - short description
+   There will be another method to make the table headings"
+  (with-html-output (s stream :indent t)
+    (:tr (:td (:input :name (sku item) :value 0 :type "text" :length 3))
+	 (:td (str (sku item)))
+	 (:td (str (title item))
+	      " - "
+	      (:i (str (short-description item)))))))
+
+(defmethod item-q-headers ((item line-item) stream)
+  "Spits out table headers as follows:
+       Quantity | SKU | Item name and description"
+  (with-html-output (s stream :indent t)
+    (:tr (:th (str "Quantity"))
+	 (:th (str "SKU#"))
+	 (:th (str "Item name and description")))))
+
+
+(defgeneric display (item))
+
+(defun basic-menu ()
+  (lambda (stream)
+    (with-html-output (s stream)
+      ((:ul :id "jsddm")
+       (:li ((:a :href "#") "New")
+	    (:ul (:li ((:a :href "/single-item/new") "Single item"))
+		 (:li ((:a :href "/bundle/new") "Bundle"))))
+       (:li ((:a :href "#") "View")
+	    (:ul (:li ((:a :href "/single-items") "Single items"))
+		 (:li ((:a :href "/bundles") "Bundles"))))))
+    ""))
+
+
+;; <ul id="jsddm">
+;;     <li><a href="#">JavaScript</a>
+;;         <ul>
+;;             <li><a href="#">Drop Down Menu</a></li>
+;;             <li><a href="#">jQuery Plugin</a></li>
+;;             <li><a href="#">Ajax Navigation</a></li>
+;;         </ul>
+;;     </li>
+;;     <li><a href="#">Effect</a>
+;;         <ul>
+;;             <li><a href="#">Slide Effect</a></li>
+;;             <li><a href="#">Fade Effect</a></li>
+;;             <li><a href="#">Opacity Mode</a></li>
+;;             <li><a href="#">Drop Shadow</a></li>
+;;             <li><a href="#">Semitransparent</a></li>
+;;         </ul>
+;;     </li>
+;;     <li><a href="#">Navigation</a></li>
+;;     <li><a href="#">HTML/CSS</a></li>
+;;     <li><a href="#">Help</a></li>
+;; </ul>

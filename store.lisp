@@ -24,11 +24,9 @@
 
 (defparameter *default-configuration-options*
   '((:thumbnail-width . 100)
- (:thumbnail-height . 100)
- (:display-width . 500)
- (:display-height . 500)))
-
-
+    (:thumbnail-height . 100)
+    (:display-width . 500)
+    (:display-height . 500)))
 
 (ele:defpclass web-store ()
   ((sku-prefix :initarg :sku-prefix :accessor sku-prefix)

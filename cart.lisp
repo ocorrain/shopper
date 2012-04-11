@@ -39,28 +39,13 @@
        ((:form :action "/shopping-cart" :method "post")
 	((:label :for "number") "Number of items:")
 	((:select :name "number" :id "number")
-	 ((:option :value 1 :selected "selected") (str 1))
+	 ((:option :value 0 :selected "selected") (str 0))
 	 (dotimes (i 49)
-	   (htm ((:option :value (+ i 2))
-		 (str (+ i 2))))))
+	   (htm ((:option :value (+ i 1))
+		 (str (+ i 1))))))
 	(:input :type "hidden" :name "sku" :value (sku item))
 	(:input :type "submit" :value "Add to cart"))))))
 
-
-(hunchentoot:define-easy-handler (add-to-cart :uri "/shopping-cart")
-    (sku number)
-  (hunchentoot:log-message* :info "~A" (hunchentoot:post-parameters*))
-  (case (hunchentoot:request-method*)
-    (:get (display-shopping-cart))
-    (:post 
-; (hunchentoot:start-session)
-	   (let ((item (get-item sku))
-		 (quantity (validate-number number)))
-	     (when (and item quantity)
-	       (hunchentoot:log-message* :debug "Got item ~A~%" item)
-	       (let ((cart (get-or-initialize-cart)))
-		 (add-item item cart quantity))))
-	   (display-shopping-cart))))
 
 (defun get-or-initialize-cart ()
   (if-let (cart (hunchentoot:session-value :cart))
@@ -71,9 +56,14 @@
 
 (defun display-shopping-cart ()
   (let ((cart (get-or-initialize-cart)))
-    (make-page "Shopping cart"
-	       (lambda (stream)
-		 (print-shopping-cart cart stream)))))
+    (standard-page "Shopping cart"
+	      (lambda (stream)
+		(print-shopping-cart cart stream)))))
+
+(defmethod display-link ((item line-item))
+  (with-html-output-to-string (s)
+    ((:a :href (get-url item))
+     (str (title item)))))
 
 (defun print-shopping-cart (cart stream)
   (with-html-output (s stream)
@@ -84,7 +74,7 @@
 			   (:th "Subtotal") (:th "Item")))
 		     (:tfoot
 		      (:tr (:th " ")
-			   (:th " ")
+			   (:th (fmt "Total weight: ~Ag" (get-weight cart)))
 			   (:th (str (print-price (get-price cart))))
 			   (:th "TOTAL")))
 		     (:tbody
@@ -95,5 +85,7 @@
 			  (htm (:tr (:td (str quantity))
 				    (:td (str (print-price price)))
 				    (:td (str (print-price (* price quantity))))
-				    (:td (str (title item)))))))))))))
+				    (:td (str (display-link item))
+					 (when (typep item 'bundle)
+					   (funcall (simple-bundle-list item) s)))))))))))))
 

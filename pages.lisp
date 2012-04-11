@@ -24,7 +24,7 @@
 					   #'display-short s)))
 
 		     (when-let (single-items (remove 'bundle items :key #'type-of))
-		       (htm (:h2 "Single-items")
+		       (htm (:h2 "Single items")
 			    (display-table 5 single-items
 					   #'display-short s)))))
 		 
