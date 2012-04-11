@@ -46,7 +46,7 @@
 (defun maybe-add-image (picture line-item)
   (destructuring-bind (path filename content-type) picture
     (declare (ignore content-type))
-    (add-image filename line-item)))
+    (add-image path filename line-item)))
 
 (defun pathname-name-concat (path concat-string)
   (make-pathname :directory (pathname-directory path)

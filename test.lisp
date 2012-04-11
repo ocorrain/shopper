@@ -1,7 +1,5 @@
 (in-package #:shopper)
 
-(defvar *words* (make-array 98569))
-
 (defun get-pictures (directory)
   (let ((pics '()))
     (cl-fad:walk-directory directory 
@@ -12,14 +10,26 @@
     pics))
 
 (defvar *pictures*
-  (get-pictures "/home/ocorrain/Pictures"))
+  (get-pictures "/usr/share/wallpapers"))
 
-(defun get-words ()
-  (with-open-file (f "/etc/dictionaries-common/words")
+(defun count-lines (filename)
+  (with-open-file (f filename)
     (do ((l (read-line f nil 'eof) (read-line f nil 'eof))
-	 (l-index 0 (+ l-index 1)))
-	((eq l 'eof) 'done)
-      (setf (svref *words* l-index) (string-trim '(#\Newline #\Tab #\Space) l)))))
+	 (lnum 0 (+ lnum 1)))
+	((eq l 'eof) lnum))))
+
+
+(defun get-words (filename)
+  (let ((array (make-array (count-lines filename))))
+    (with-open-file (f filename)
+      (do ((l (read-line f nil 'eof) (read-line f nil 'eof))
+	   (l-index 0 (+ l-index 1)))
+	  ((eq l 'eof) 'done)
+	(setf (svref array l-index) (string-trim '(#\Newline #\Tab #\Space) l))))
+    array))
+
+(defvar *words* (get-words "/etc/dictionaries-common/words"))
+
 
 (defun random-word (arg)
   (declare (ignore arg))
@@ -35,12 +45,11 @@
   (if (zerop (random 2))
       nil t))
 
-(defun test-provision-store (number-of-items number-of-tags images-per-item)
-  (get-words)
+(defun test-provision-store (pathname number-of-items number-of-tags images-per-item)
   (new-web-store (random-words 4)
 		 (random-letters 3)
 		 (random-letters 3)
-		 (dirconcat (pathname "/home/ocorrain/teststores/")
+		 (dirconcat pathname
 			    (get-webform (random-words 1))))
   (provision-items-test number-of-items)
   (provision-tags-test number-of-tags)
@@ -67,7 +76,7 @@
   (dolist (i items)
     (format t "~&Provisioning ~A~%" (title i))
     (dotimes (n number-per-item)
-      (add-image (random-elt *pictures*) i))))
+      (add-image (random-elt *pictures*) "something.jpg" i))))
 
 (defun tag-items-test (items tags)
   (dolist (i items)

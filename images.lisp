@@ -81,8 +81,8 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 	    (htm (:li ((:a :href (get-full-url i))
 		       (:img :src (get-thumb-url i))))))))))))
 
-(defun add-image (path line-item)
-  (let ((type (string-downcase (pathname-type path)))
+(defun add-image (path original-filename line-item)
+  (let ((type (string-downcase (pathname-type original-filename)))
 	(stub (get-next-image-stub line-item)))
     (let ((dest-path (make-pathname
 		      :name stub :type type
