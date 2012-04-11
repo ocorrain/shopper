@@ -1,0 +1,57 @@
+
+* TODO Bundles
+  :LOGBOOK:
+  - State "TODO"       from ""           [2012-03-31 Sat 14:22]
+  :END:
+  - bundles are sets of products (qlists)
+  - the bundle interface allows the bundle to be defined
+  - a picking interface (similar to the single items list) that allows
+    single items and quantities to be added to the bundle
+  - this picking interface to be broken down by category for ease
+  - photographs can be associated with bundles: if none are, the
+    bundle photographs will be the set of photos of the single items
+    in the bundles
+  - bundles can contain other bundles, but may not contain themselves
+
+* TODO Facility for stock-keeping
+  :LOGBOOK:
+  - State "TODO"       from ""           [2012-03-31 Sat 14:22]
+  :END:
+  - Max number of items of one type that can be sold per week
+  - can be changed manually
+  - once that number has been exceeded, customers are offered a
+    waiting list for an overcapacity of 50%
+  - once that's been exceeded, the item disappears from the site until
+    the following week, with the quota reduced by the number of items
+    that are on the waiting list.  This is to stop quota snowballing
+
+* TODO Variable distribution
+  :LOGBOOK:
+  - State "TODO"       from ""           [2012-03-31 Sat 14:22]
+  :END:
+  - some items can't be distributed all over the world, due to
+    packaging and perishability
+  - each item needs to have an additional field describing its
+    distributability: suggestions
+    - Ireland only
+    - Europe only
+    - Ireland, Europe, and USA only
+    - Rest of the world
+  - the distribuability of a bundle is that of the least distributable
+    of its elements
+
+* TODO Order fulfillment
+  :LOGBOOK:
+  - State "TODO"       from ""           [2012-03-31 Sat 14:24]
+  :END:
+  - when an shopping cart has been processed it becomes an order
+  - an order is a paid commitment to a customer to deliver goods
+  - an order being placed triggers the following
+    - a mail being sent to the customer with an order number saying
+      that an order has been placed and paid
+    - a mail being sent to the vendor with the order number, a list of
+      goods in the order, and the order price
+    - an order object being created from the shopping cart.
+  - a list of outstanding (and fulfilled) orders needs to be in the
+    system, so vendors can check off fulfilled orders a view what is
+    in the outgoing queue

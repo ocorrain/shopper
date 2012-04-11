@@ -86,3 +86,60 @@
     (:br)
     (:input :type "submit" :name "submit" :value label :class "text")
     (:br)))
+
+(defun expand-form (spec)
+  (typecase spec
+    (cons (expand-form-cons spec))
+    (otherwise spec)))
+
+(defun expand-form-cons (spec)
+  (if-let ((template (get-form-template (car spec))))
+    (append (sublis (second spec) template)
+	    (third spec))
+    (mapcar #'expand-form spec)))
+
+(defun form (spec)
+  (lambda (stream)
+    (eval (cl-who::tree-to-commands (expand-form spec) stream))))
+
+  ;;   (with-html-output (s stream)
+  ;;     (expand-form spec))))
+  ;; )
+
+;; (defmacro html-eval-to-string (h)
+;;   `(with-html-output-to-string (s)
+;;      ,@h))
+
+;;   (cond () (find (car)) case (car spec)
+;;     (text '(((:label :for (add-prefix (second spec))) (str (second spec)))
+;; 	    (:input :type "text" :name (add-prefix (second spec) prefix)
+;; 	     :value (fourth spec) :id (add-prefix (second spec)))))
+;;     (textarea '())))
+
+;; (text "title" "Item title" "dummy title")
+;; (text "description" "Item description" "dummy description")
+;; (textarea "longdesc" "Long description" "dummy long description")
+
+(defparameter *form-templates*
+  '((text :input :type "text" :name name :value value :id id)
+    (textarea (:textarea :id id :name name) (str value))
+    (label (:label :for target) label)
+    (file :input :type "file" :name name :id id)
+    (checkbox :input :type "checkbox" :name name :value value :checked checked)
+    (radio :input :type "radio" :name name :id id :value value :checked checked)))
+
+
+(defun get-form-template (symbol)
+  (cdr (assoc symbol *form-templates*)))
+
+(defun get-symbols (spec)
+  (remove-if-not (lambda (thing) (and (symbolp thing)
+				      (not (keywordp thing))
+				      (not (member thing '(str esc htm fmt)))))
+		 (flatten spec)))
+
+(defun form-filler (spec)
+  (lambda (alist)
+    (let ((new-spec (sublis alist spec)))
+      (values new-spec (get-symbols new-spec) (form-filler new-spec)))))
+

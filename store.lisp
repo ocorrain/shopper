@@ -74,9 +74,12 @@
 			   (asdf:system-relative-pathname  :shopper "images/"))))
 
 (defun ensure-pathname-directory (string)
-  (if (char-equal (char string (1- (length string))) #\/)
-      string
-      (format nil "~A/" string)))
+  (if (pathnamep string)
+      (ensure-pathname-directory (namestring string))
+      (if (char-equal (char string (1- (length string))) #\/)
+	  (pathname string)
+	  (pathname (format nil "~A/" string)))))
+
 
 (defun dirconcat (directory &rest subdirs)
   (make-pathname
@@ -85,12 +88,12 @@
 
 
 (defun make-store-directory-hierarchy (directory)
-  (let ((base-path (pathname-directory (ensure-pathname-directory directory))))
-    (ensure-directories-exist (make-pathname :directory base-path))
+  (let ((base-path (ensure-pathname-directory directory)))
+    (ensure-directories-exist base-path)
     (dolist (path (list "store" "images" "files" "xml" "audit"))
       (ensure-directories-exist (dirconcat base-path path)
 				:verbose t))
-    (make-pathname :directory (dirconcat base-path "store"))))
+    (dirconcat base-path "store")))
 
 (defun new-web-store (store-name sku-prefix order-prefix directory)
   (let* ((base-path (ensure-pathname-directory directory))

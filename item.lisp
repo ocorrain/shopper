@@ -21,8 +21,8 @@
 		   :documentation "The extra weight of packaging:
 		   ie. packing-weight + weight equals the total
 		   shipping weight")
-   (categories :initarg :categories :initform '()
-	       :accessor categories
+   (tags :initarg :tags :initform (ele:make-pset)
+	       :accessor tags
 	       :documentation "A list of categories or tags into which
 	       this item falls"
 	       :type list)
@@ -48,83 +48,31 @@
 		  :documentation "counter for image filenames"
 		  :type number)))
 
-(ele:defpclass single-item (line-item)
-  ((weight :initarg :weight :initform 0 :accessor weight
-	   :documentation "The weight of the item in grams" :type integer)
-   (price :initarg :price :initform 0 :accessor price
-	  :documentation "The price of the item in euro cents" :type integer)))
-
-(ele:defpclass bundle (line-item quantity-list)
-  ((discount :initarg :discount :initform 0 :accessor discount
-	     :documentation "Percentage discount for a bundle")))
-
-
 (defun get-item (sku)
   (ele:get-value sku (items *web-store*)))
 
-(defmethod get-price ((item single-item))
-  (price item))
+(defgeneric get-price (item))
+
+(defmethod get-price ((qlist quantity-list))
+  (qlist-reduce (items qlist) :item-function #'get-price))
+
+(defgeneric get-weight (item))
+
+(defmethod get-weight ((qlist quantity-list))
+  (qlist-reduce (items qlist) :item-function #'get-weight))
 
 (defmethod get-next-image-stub ((item line-item))
   (prog1
       (format nil "~A_~A" (sku item) (image-counter item))
     (incf (image-counter item))))
 
-
 (defun get-url (line-item)
   (url-rewrite:add-get-param-to-url "/item" "sku" (sku line-item)))
 
-(defmethod get-price :around ((bundle bundle))
-  "Applies the bundle discount"
-  (let ((initial-price (call-next-method)))
-    (round (* initial-price (/ (- 100 (discount bundle)) 100)))))
-
-(defvar *words* (make-array 98569))
-
-(defun get-words ()
-  (with-open-file (f "/etc/dictionaries-common/words")
-    (do ((l (read-line f nil 'eof) (read-line f nil 'eof))
-	 (l-index 0 (+ l-index 1)))
-	((eq l 'eof) 'done)
-      (setf (svref *words* l-index) (string-trim '(#\Newline #\Tab #\Space) l)))))
-
-(defun random-word (arg)
-  (declare (ignore arg))
-  (svref *words* (random (length *words*))))
-
-(defun random-word-list (number)
-  (mapcar #'random-word (make-list number)))
-
-(defun random-words (number)
-  (format nil "~{~A~^ ~}" (random-word-list number)))
-
-(defun flip ()
-  (if (zerop (random 2))
-      nil t))
 
 
-(defun provision-items-test (number)
-  (dotimes (i number)
-    (make-instance 'single-item
-		 :title (random-words 3)
-		 :short-description (random-words 30)
-		 :long-description (random-words 150)
-		 :weight (random 2000)
-		 :price (random 10000)
-		 :categories (random-word-list 10)
-		 :meta (random-word-list 10)
-		 :featured (flip)
-		 :published (flip))))
 
-(defun export-items-test (filename)
-  (with-open-file (f filename :direction :output :if-exists :supersede)
-    (dolist (i (ele:get-instances-by-class 'line-item))
-      (format f "TITLE: ~A~%SHORT-DESCRIPTION: ~A~%LONG-DESCRIPTION: ~A~%"
-	      (title i) (short-description i) (long-description i))
-      (format f "WEIGHT: ~Ag~%PRICE: ~Ac~%CATEGORIES: ~S~%" (weight i) (price i) (categories i))
-      (format f "SKU: ~A~%META: ~S~%FEATURED: ~A~%PUBLISHED: ~A~%~%~%"
-	      (sku i) (meta i) (featured i) (published i)))))
 
-(defun delete-items-test ()
-  (ele:drop-instances (ele:get-instances-by-class 'line-item)))
+
+
 

@@ -40,22 +40,13 @@
     (when errors (setf (hunchentoot:session-value 'errors) errors))
     (hunchentoot:redirect (get-url item))))
 
+(defmethod maybe-update :after ((item bundle) parameters)
+  (hunchentoot:log-message* :info "~S" parameters))
+
 (defun maybe-add-image (picture line-item)
   (destructuring-bind (path filename content-type) picture
     (declare (ignore content-type))
-    (let ((type (string-downcase (pathname-type filename)))
-	  (stub (get-next-image-stub line-item)))
-      (let ((dest-path (make-pathname
-			:name stub :type type
-			:defaults (image-path *web-store*))))
-	(cl-fad:copy-file path dest-path)
-	(create-thumbnail dest-path (get-thumb-path dest-path)
-			  (get-config-option :thumbnail-width)
-			  (get-config-option :thumbnail-height))
-	(create-thumbnail dest-path (get-full-size-path dest-path)
-			  (get-config-option :display-width)
-			  (get-config-option :display-height))
-	(push (make-pathname :name stub :type type) (images line-item))))))
+    (add-image filename line-item)))
 
 (defun pathname-name-concat (path concat-string)
   (make-pathname :directory (pathname-directory path)

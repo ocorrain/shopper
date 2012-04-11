@@ -44,7 +44,7 @@ function toggle(showHideDiv, switchTextDiv, hiddenText, visibleText) {
 "))))
 
 (defun lightbox-js (stream)
-  (with-html-output (s stream)
+  (with-html-output (s stream :indent t)
     (:script :type "text/javascript" :src "/js/jquery.lightbox-0.5.pack.js")))
 
 (defun lightbox-gallery (stream id)
