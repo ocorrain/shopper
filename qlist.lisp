@@ -9,7 +9,7 @@
 
 (defstruct (qlist-entry (:type list)) item quantity)
 
-(defmethod add-item ((item line-item) (qlist quantity-list) quantity)
+(defmethod add-item (item (qlist quantity-list) quantity)
   (if-let (found (find item (items qlist) :key #'qlist-entry-item))
           (setf (items qlist)
 		(cons (make-qlist-entry :item item
@@ -21,7 +21,7 @@
 		       (items qlist) :key #'qlist-entry-quantity))
   (items qlist))
 
-(defmethod remove-item ((item line-item) (qlist quantity-list))
+(defmethod remove-item (item (qlist quantity-list))
   (setf (items qlist) (remove item (items qlist) :key #'qlist-entry-item)))
 
 (defmethod empty-qlist ((qlist quantity-list))
