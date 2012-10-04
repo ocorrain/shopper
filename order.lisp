@@ -3,20 +3,21 @@
 
 (in-package #:shopper)
 
-(let ((order-counter 1))
-  (defun get-next-order ()
-    (prog1
-	(format nil "OR~7,'0d" order-counter)
-      (incf order-counter)))
-  (defun reset-order-counter ()
-    (setf order-counter 1)))
+(defun get-next-order (&optional (store *web-store*))
+  (ele:with-transaction ()
+      (prog1
+	  (format nil "~A~7,'0d" (order-prefix store) (order-counter store))
+	(incf (order-counter store)))))
 
-(ele:defpclass order (quantity-list)
+(ele:defpclass order ()
   ((order-number :initarg :order-number :initform (get-next-order) :accessor order-number)
-   (order-placed :initarg :placed :initform (get-universal-time) :accessor placed
-		 :documentation "When the order was placed")
+   (order-state :initarg :order-state :initform nil :accessor order-state)
+   (order-timestamps :initarg :order-timestamps :initform nil :accessor order-timestamps)
    (customer :initarg :customer :initform nil :accessor customer
 	     :documentation "Object holding customer details for this cart")
+   (cart :initarg :cart :initform nil :accessor cart)
+   (reified-cart :initarg :reified-cart :initform nil :accessor reified-cart)
+   (gateway-ref :initarg :gateway-ref :initform nil :accessor gateway-ref)
    (order-price :initarg :order-price :initform 0 :accessor order-price)))
 
 (defun convert-cart-to-order (cart)

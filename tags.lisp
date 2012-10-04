@@ -10,10 +10,14 @@
 (ele:defpclass tag ()
   ((name :initarg :name :initform "" :accessor tag-name :index t
 	 :documentation "Tag name" :type string)
+   (description :initarg :description :initform "" :accessor description)
    (webform :accessor webform :index t :documentation "Web safe form
    of the tag name for transmission" :type string)
    (members :initarg :members :initform (ele:make-pset) :accessor tag-members
-	    :documentation "Pset of items tagged with this tag")))
+	    :documentation "Pset of items tagged with this tag")
+   (appears-in-menu :initarg :appears-in-menu :initform nil :accessor appears-in-menu)
+   (featured :initarg :featured :initform nil :accessor featured)))
+
 
 (defmethod initialize-instance :after ((instance tag) &rest stuff)
   (declare (ignore stuff))
@@ -27,13 +31,22 @@
 
 (defmethod untag-item ((item line-item) (tag tag))
   (ele:remove-item item (tag-members tag))
-  (ele:remove-item item (tags item)))
+  (ele:remove-item tag (tags item)))
 
 (defun tagged? (item tag)
   (ele:find-item tag (tags item)))
 
 (defun all-tags ()
   (ele:get-instances-by-class 'tag))
+
+(defun menu-tags ()
+  (remove-if-not (lambda (tag)
+		   (and (appears-in-menu tag)
+			(not (featured tag))))
+		 (all-tags)))
+
+(defun featured-tags ()
+  (remove-if-not #'featured (all-tags)))
 
 (defun get-tag (webform)
   (ele:get-instance-by-value 'tag 'webform webform))
@@ -75,9 +88,50 @@
 (defun get-tag-url (tag)
   (url-rewrite:add-get-param-to-url "/display-tag" "name" (webform tag)))
 
+(defmethod get-view-url ((tag tag))
+  (format nil "/view/tag/~A" (webform tag)))
+
 (defun get-tagged-items (tag)
   (ele:pset-list (tag-members tag)))
 
 (defmethod get-tags ((item line-item))
   (ele:pset-list (tags item)))
 
+
+(defmethod get-edit-view-url ((tag tag))
+  (format nil "/edit/tag/~A/view" (webform tag)))
+
+(defmethod get-edit-edit-url ((tag tag))
+  (format nil "/edit/tag/~A/edit" (webform tag)))
+
+(defmethod get-delete-url ((obj line-item))
+  (format nil "/delete/item/~A" (sku obj)))
+
+(defun render-tags (list-of-tags)
+  (with-html-output-to-string (s)
+    (dolist (tag list-of-tags)
+      (if (appears-in-menu tag)
+	  (if (featured tag)
+	      (htm ((:a :href (url-rewrite:add-get-param-to-url
+			       (hunchentoot:script-name*) "tag" (webform tag))
+			:class "btn btn-small btn-success")
+		    (str (tag-name tag))))
+	      (htm ((:a :href (url-rewrite:add-get-param-to-url
+			       (hunchentoot:script-name*) "tag" (webform tag))
+			:class "btn btn-small btn-primary")
+		    (str (tag-name tag)))))
+	  (htm ((:span :class "btn btn-small")
+		((:a :href (url-rewrite:add-get-param-to-url
+			    (hunchentoot:script-name*) "tag" (webform tag)))
+		 (str (tag-name tag)))))))))
+
+(defun collect-tags-with (func)
+  (remove-if-not (lambda (tag)
+		   (funcall func tag))
+		 (all-tags)))
+
+(defun tag->nav (list-of-tags)
+  (mapcar (lambda (tag)
+	    (cons (get-view-url tag)
+			 (tag-name tag)))
+	  list-of-tags))

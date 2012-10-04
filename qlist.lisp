@@ -11,15 +11,18 @@
 
 (defmethod add-item (item (qlist quantity-list) quantity)
   (if-let (found (find item (items qlist) :key #'qlist-entry-item))
-          (setf (items qlist)
-		(cons (make-qlist-entry :item item
-				       :quantity quantity)
-		      (remove found (items qlist) :test #'equalp)))
-	  (push (make-qlist-entry :item item :quantity quantity) (items qlist)))
+    (let ((current-quantity (qlist-entry-quantity found)))
+      (set-item-quantity item qlist (+ quantity current-quantity)))
+    (set-item-quantity item qlist quantity))
   (setf (items qlist)
 	(remove-if-not #'positive-integer-p
 		       (items qlist) :key #'qlist-entry-quantity))
   (items qlist))
+
+(defmethod set-item-quantity (item (qlist quantity-list) quantity)
+  (setf (items qlist)
+	(cons (make-qlist-entry :item item :quantity quantity)
+	      (remove-item item qlist))))
 
 (defmethod remove-item (item (qlist quantity-list))
   (setf (items qlist) (remove item (items qlist) :key #'qlist-entry-item)))

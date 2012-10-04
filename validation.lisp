@@ -3,6 +3,48 @@
 
 (in-package #:shopper)
 
+(defmethod maybe-create ((type (eql 'tag)) parameters)
+  (flet ((assoc-val (val) (cdr (assoc val parameters))))
+    (if-let (name (validate-as-string (assoc-val 'name)))
+      (let ((webform (get-webform name)))
+	(if-let (tag (get-tag webform))
+	  (hunchentoot:redirect (get-edit-edit-url tag))
+	  (let ((tag (make-instance 'tag :name name)))
+	    (when (assoc-val 'appearsinmenu)
+	      (setf (appears-in-menu tag) t))
+	    (when (assoc-val 'featured)
+	      (setf (featured tag) t))
+	    (when-let (description (validate-as-string (assoc-val 'description)))
+	      (setf (description tag) description))
+	    (hunchentoot:redirect (get-edit-edit-url tag)))))
+      (hunchentoot:redirect "/new/tag"))))
+
+(defmethod maybe-update ((tag tag) parameters)
+  (flet ((assoc-val (val) (cdr (assoc val parameters))))
+    (when-let (name (validate-as-string (assoc-val 'name)))
+      (setf (tag-name tag) name)
+      (setf (webform tag) (get-webform name)))
+    (when-let (description (validate-as-string (assoc-val 'description)))
+      (setf (description tag) description))
+    (if (assoc-val 'appearsinmenu)
+	(setf (appears-in-menu tag) t)
+	(setf (appears-in-menu tag) nil))
+    (if (assoc-val 'featured)
+	(setf (featured tag) t)
+	(setf (featured tag) nil))))
+
+(defmethod maybe-create ((type (eql 'item)) parameters)
+  "Object creation template.  Once we have satisfied the minimal
+  criteria for an object (the existence of a title), we fill in as
+  many other slots as possible and redirect to the object page"
+  (multiple-value-bind (valid errors) (validate 'single-item parameters)
+    (flet ((assoc-val (val) (cdr (assoc val valid))))
+      (if-let (title (assoc-val 'title))
+	(let ((item (make-instance 'line-item)))
+	  (set-valid-fields item valid)
+	  (when errors (setf (hunchentoot:session-value 'errors) errors))
+	  (hunchentoot:redirect (get-edit-edit-url item)))))))
+
 (defmethod maybe-create ((type (eql 'single-item)) parameters)
   "Object creation template.  Once we have satisfied the minimal
   criteria for an object (the existence of a title), we fill in as
@@ -38,7 +80,7 @@
   (multiple-value-bind (valid errors) (validate item parameters)
     (set-valid-fields item valid)
     (when errors (setf (hunchentoot:session-value 'errors) errors))
-    (hunchentoot:redirect (get-url item))))
+    (hunchentoot:redirect (get-edit-edit-url item))))
 
 (defmethod maybe-update :after ((item bundle) parameters)
   (hunchentoot:log-message* :info "~S" parameters))
@@ -60,7 +102,7 @@
   (pathname-name-concat path "_full"))
 
 
-(defmethod set-valid-fields ((item single-item) alist)
+(defmethod set-valid-fields ((item line-item) alist)
   (set-generic-fields item alist)
   (flet ((assoc-val (val) (cdr (assoc val alist))))
     (when-let (weight (assoc-val 'weight))
@@ -98,11 +140,22 @@
       (values (append valid-generic valid-single)
 	      (append errors-generic errors-single)))))
 
+(defmethod validate ((type (eql 'item)) parameters)
+  (multiple-value-bind (valid-generic errors-generic)
+      (validate-generic-line-item-fields parameters)
+    (multiple-value-bind (valid-single errors-single)
+	(validate-single-item-fields parameters)
+      (values (append valid-generic valid-single)
+	      (append errors-generic errors-single)))))
+
 (defmethod validate ((type (eql 'bundle)) parameters)
   (validate-generic-line-item-fields parameters))
 
 (defmethod validate ((item single-item) parameters)
   (validate 'single-item parameters))
+
+(defmethod validate ((item line-item) parameters)
+  (validate 'item parameters))
 
 (defmethod validate ((item bundle) parameters)
   (validate 'bundle parameters))

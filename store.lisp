@@ -23,8 +23,8 @@
     (write *default-configuration-options* :stream f :pretty t :right-margin 60 :case :downcase)))
 
 (defparameter *default-configuration-options*
-  '((:thumbnail-width . 100)
-    (:thumbnail-height . 100)
+  '((:thumbnail-width . 300)
+    (:thumbnail-height . 300)
     (:display-width . 500)
     (:display-height . 500)))
 
@@ -34,6 +34,8 @@
    (order-prefix :initarg :order-prefix :accessor order-prefix)
    (order-counter :initform 1 :accessor order-counter)
    (store-name :initarg :store-name :accessor store-name)
+   (store-customers :initarg :store-customers :accessor store-customers
+		    :initform (ele:make-btree))
    (item-btree :initform (ele:add-to-root 'items (ele:make-btree)) :accessor items)
    (acceptor :initform nil :transient t :accessor acceptor)
    (image-path :initarg :image-path
@@ -115,14 +117,18 @@
     (create-config)))
 
 (defun get-next-sku (&optional (store *web-store*))
-  (prog1
-      (format nil "~A~7,'0d" (sku-prefix store) (sku-counter store))
-    (incf (sku-counter store))))
+  (ele:with-transaction ()
+      (prog1
+	  (format nil "~A~7,'0d" (sku-prefix store) (sku-counter store))
+	(incf (sku-counter store)))))
+
 
 (defun get-next-order (&optional (store *web-store*))
-  (prog1
-      (format nil "~A~7,'0d" (order-prefix store) (order-counter store))
-    (incf (order-counter store))))
+  (ele:with-transaction ()
+    (prog1
+	(format nil "~A~7,'0d" (order-prefix store) (order-counter store))
+      (incf (order-counter store)))))
+
 
 (defun close-web-store ()
   (ele:close-store)

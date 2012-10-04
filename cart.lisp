@@ -11,7 +11,22 @@
    (customer :initarg :customer :initform nil :accessor customer
 	     :documentation "Object holding customer details for this cart")))
 
+(defmethod reify ((cart shopping-cart))
+  (let ((items '()))
+    (dolist (i (items cart))
+      (let ((line-item (qlist-entry-item i))
+	    (quantity (qlist-entry-quantity i)))
+	(push (list (sku line-item)
+		    (title line-item)
+		    quantity
+		    (price line-item)
+		    (weight line-item))
+	      items)))
+    items))
 
+
+(defmethod count-items-in ((cart shopping-cart))
+  (reduce #'+ (mapcar #'qlist-entry-quantity (items cart))))
 
 (defun random-item ()
   (random-elt (ele:get-instances-by-class 'single-item)))
@@ -33,18 +48,19 @@
 (defmethod cart-widget ((item line-item))
   "Widget that goes on display item pages with Add to cart
   functionality"
-  (lambda (stream)
-    (with-html-output (s stream :indent t)
+  (with-html-output-to-string (s)
       ((:div :id "cart")
-       ((:form :action "/shopping-cart" :method "post")
-	((:label :for "number") "Number of items:")
-	((:select :name "number" :id "number")
-	 ((:option :value 0 :selected "selected") (str 0))
-	 (dotimes (i 49)
-	   (htm ((:option :value (+ i 1))
-		 (str (+ i 1))))))
-	(:input :type "hidden" :name "sku" :value (sku item))
-	(:input :type "submit" :value "Add to cart"))))))
+       ((:p :align "center")
+       ((:form :action "/add-to-cart" :method "post")
+	((:div :class "input-append")
+	 ((:select :class "input-mini" :name "number" :id "number")
+	  ((:option :value 1 :selected "selected") (str 1))
+	  (dotimes (i 49)
+	    (htm ((:option :value (+ i 2))
+		  (str (+ i 2))))))
+	 (:input :type "hidden" :name "sku" :value (sku item))
+	 ((:button :class "btn btn-success" :type "submit") "Add to cart")))))))
+
 
 
 (defun get-or-initialize-cart ()
@@ -53,6 +69,9 @@
     (let ((cart (make-instance 'shopping-cart)))
       (setf (hunchentoot:session-value :cart) cart)
       cart)))
+
+(defun get-cart ()
+  (hunchentoot:session-value :cart))
 
 (defun display-shopping-cart ()
   (let ((cart (get-or-initialize-cart)))
@@ -65,16 +84,15 @@
     ((:a :href (get-url item))
      (str (title item)))))
 
-(defun print-shopping-cart (cart stream)
-  (with-html-output (s stream)
+(defun print-shopping-cart (cart)
+  (with-html-output-to-string (s)
     (if (empty? cart)
 	(htm (str "The shopping cart is empty"))
 	(htm (:table (:thead
-		      (:tr (:th "Quantity") (:th "Item price")
-			   (:th "Subtotal") (:th "Item")))
+		      (:tr (:th "Quantity") (:th "Price")
+			   (:th "Item")))
 		     (:tfoot
-		      (:tr (:th " ")
-			   (:th (fmt "Total weight: ~Ag" (get-weight cart)))
+		      (:tr (:th (fmt "Total weight: ~Ag" (get-weight cart)))
 			   (:th (str (print-price (get-price cart))))
 			   (:th "TOTAL")))
 		     (:tbody
@@ -83,9 +101,31 @@
 			       (item (qlist-entry-item i))
 			       (price (get-price item)))
 			  (htm (:tr (:td (str quantity))
-				    (:td (str (print-price price)))
 				    (:td (str (print-price (* price quantity))))
-				    (:td (str (display-link item))
+				    (:td ((:a :href (get-view-url item))
+					  (str (title item)))
 					 (when (typep item 'bundle)
 					   (funcall (simple-bundle-list item) s)))))))))))))
+
+
+(defun shopping-cart-form (cart)
+  (with-html-output-to-string (s)
+    ((:div :class "row")
+     ((:div :class "span5")
+      ((:form :class "form-horizontal" :action "/shopping-cart" :method :post)
+       (dolist (i (items cart))
+	 (destructuring-bind (item quantity) i
+	   (htm ((:div :class "control-group")
+		 ((:label :class "control-label" :for (sku item))
+		  (str (title item)))
+		 ((:div :class "controls")
+		  (:input :type "text" :class "input-mini" :name (sku item)
+			  :value quantity))))))
+       ((:button :type "submit" :class "btn btn-large pull-left") "Update"))
+      
+      ((:a :href "/checkout" :class "pull-right btn btn-large btn-primary")
+	"Continue >>"))
+     ((:div :class "span5")
+      ((:div :class "well")
+       (str (print-shopping-cart cart)))))))
 

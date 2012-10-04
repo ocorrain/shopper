@@ -4,14 +4,18 @@
 (asdf:defsystem :shopper
   :version "0.1"
   :serial t
-  :depends-on (:hunchentoot
+  :depends-on (:restas
+	       :restas-directory-publisher 
+	       :hunchentoot
 	       :elephant
 	       :cl-who
 	       :alexandria
 	       :url-rewrite
 	       :lisp-magick
-	       :cl-fad)
-  :components ((:file "package")
+	       :cl-fad
+	       :drakma
+	       :cl-html-parse)
+  :components ((:file "routes")
 	       (:file "js")
 	       (:file "widgets")
 	       (:file "qlist")
@@ -21,9 +25,10 @@
 	       (:file "images")
 	       (:file "store")
                (:file "forms")
-	       (:file "validation")
 	       (:file "tags")
+	       (:file "validation")
 	       (:file "cart")
+	       (:file "customer")
 	       (:file "display")
 	       (:file "pages")))
 

@@ -44,3 +44,9 @@
 		
 		#jsddm li ul li a:hover
 		{	background: #7F1616}
+
+
+.displaytable td {
+    text-align: center;
+
+}

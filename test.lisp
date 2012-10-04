@@ -10,7 +10,7 @@
     pics))
 
 (defvar *pictures*
-  (get-pictures "/usr/share/wallpapers"))
+  (get-pictures "/home/shopper/sampleimages/"))
 
 (defun count-lines (filename)
   (with-open-file (f filename)
@@ -115,3 +115,46 @@
   (dolist (tag (tags item))
     (untag-item item tag))
   (ele:drop-instance item))
+
+;; get some sample pictures
+(defun get-babes (htmls)
+  (if (null htmls)
+      nil
+      (let ((next (car htmls)))
+	(cond ((istitle next)
+	       (cons next (get-babes (cdr htmls))))
+	      ((listp next)
+	       (append (get-babes next)
+		       (get-babes (rest htmls))))
+	      (t (get-babes (cdr htmls)))))))
+
+(defun get-babe-html (url)
+  (net.html.parser:parse-html (drakma:http-request url)))
+
+(defun get-babe-urls (babes)
+  (mapcar (lambda (list)
+	    (getf (cdr list) :href))
+	  babes))
+
+(defun istitle (thing)
+  (and (listp thing)
+       (equal (subseq thing 0 (min 3 (length thing)))
+	      (list :a :class "title "))))
+
+(defun get-pictures (url output-directory)
+  (ensure-directories-exist output-directory)
+  (let ((urls (get-babe-urls (get-babes (get-babe-html url)))))
+    (print urls)
+    (dolist (u urls)
+      (let ((type (pathname-type url)))
+	(when (and (stringp type)
+		   (equal (string-downcase type) "jpg")))
+	(with-open-file (f (make-pathname
+			    :name (pathname-name u)
+			    :type "jpg"
+			    :defaults output-directory)
+			   :direction :output  :element-type 'unsigned-byte)
+	  (multiple-value-bind (seq retval)
+	      (drakma:http-request u)
+	    (when (= retval 200)
+	      (write-sequence seq f))))))))
