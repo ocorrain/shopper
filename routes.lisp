@@ -13,16 +13,17 @@
 ;;                                             (restas.directory-publisher:*directory* #P"/home/ocorrain/lisp/dev/bootstrap/")
 ;;                                             (restas.directory-publisher:*autoindex* nil)))
 
-(restas:mount-submodule twitter-bootstrap-files (#:restas.directory-publisher)
-  (restas.directory-publisher:*baseurl* '("s"))
-  (restas.directory-publisher:*directory* #P"/home/ocorrain/lisp/dev/bootstrap/")
-  (restas.directory-publisher:*autoindex* nil))
 
-(defun mount-webstore-images ()
+
+(defun mount-webstore-content ()
   (restas:mount-submodule webstore-images (#:restas.directory-publisher)
-  (restas.directory-publisher:*baseurl* '("images"))
-  (restas.directory-publisher:*directory* (image-path *web-store*))
-  (restas.directory-publisher:*autoindex* nil)))
+    (restas.directory-publisher:*baseurl* '("images"))
+    (restas.directory-publisher:*directory* (image-path *web-store*))
+    (restas.directory-publisher:*autoindex* nil))
+  (restas:mount-submodule twitter-bootstrap-files (#:restas.directory-publisher)
+    (restas.directory-publisher:*baseurl* '("s"))
+    (restas.directory-publisher:*directory* (get-twitter-bootstrap-path))
+    (restas.directory-publisher:*autoindex* nil)))
 
 
 ;; ITEMs, bundles or single items

@@ -139,3 +139,7 @@
   (setf (sku item) (get-next-sku *web-store*))
   (setf (ele:get-value (sku item) (items *web-store*))
 	item))
+
+(defun get-twitter-bootstrap-path ()
+  (make-pathname :directory (append (pathname-directory (base-path *web-store*))
+				    (list "files" "bootstrap"))))

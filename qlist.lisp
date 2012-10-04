@@ -22,7 +22,11 @@
 (defmethod set-item-quantity (item (qlist quantity-list) quantity)
   (setf (items qlist)
 	(cons (make-qlist-entry :item item :quantity quantity)
-	      (remove-item item qlist))))
+	      (remove-item item qlist)))
+  (setf (items qlist)
+	(remove-if-not #'positive-integer-p
+		       (items qlist) :key #'qlist-entry-quantity))
+  qlist)
 
 (defmethod remove-item (item (qlist quantity-list))
   (setf (items qlist) (remove item (items qlist) :key #'qlist-entry-item)))
