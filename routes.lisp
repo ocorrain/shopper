@@ -33,7 +33,6 @@
     ("/new/item")
   (new-item-page))
 
-
 (restas:define-route r/new-item/post
     ("/new/item" :method :post)
   (maybe-create 'item (fix-alist (hunchentoot:post-parameters*))))
