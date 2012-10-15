@@ -16,10 +16,11 @@
 	       :drakma
 	       :cl-html-parse)
   :components ((:file "routes")
+	       (:file "display-routes")
 	       (:file "js")
 	       (:file "widgets")
-	       (:file "qlist")
-               (:file "item")
+	       (:file "item")
+               (:file "qlist")
 	       (:file "single-item")
 	       (:file "bundle")
 	       (:file "images")

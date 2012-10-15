@@ -93,7 +93,7 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 
 (defun display-an-image (item)
   (with-html-output-to-string (s)
-    (:img :src (get-thumb-url (random-elt (images item))))))
+    (:img :class "img-polaroid" :src (get-thumb-url (random-elt (images item))))))
 
 (defun display-gallery (images id)
   (let ((thumb-width (get-config-option :thumbnail-width))

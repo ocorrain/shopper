@@ -10,7 +10,7 @@ function just makes sure the right components are included."
     ((:html :lang "en") (:head (:title (str title))
 			       (:link :href "/s/css/bootstrap.min.css" :rel "stylesheet")
 			       (:style "body {
-        padding-top: 90px; /* 60px to make the container go all the way to the bottom of the topbar */
+        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
       }"))
      (:body
       ((:div :class "navbar navbar-inverse navbar-fixed-top")
@@ -34,7 +34,10 @@ function just makes sure the right components are included."
 	   (htm ((:a :href "/checkout" :class "pull-right btn btn btn-primary")
 		 "CHECKOUT")
 		((:a :href "/shopping-cart" :class "pull-right btn btn-warning")
-		 (fmt "~A items in cart" (count-items-in cart))))))))
+		 (:i :class "icon-shopping-cart icon-white")
+		 (str (count-items-in cart))
+		 ;; (fmt "~A items in cart" (count-items-in cart))
+		 ))))))
       
       
       
@@ -173,19 +176,19 @@ function just makes sure the right components are included."
 	      ("Total weight" . ,(format nil "~Ag" (+ packing-weight weight))))
 	    stream)))))
 
-(defmethod get-packing-details ((bundle bundle))
-  (lambda (stream)
-    (with-slots (packing-weight)
-	bundle
-      (let ((weight (get-weight bundle)))
-	(with-html-output (s stream :indent t)
-	  (:h2 (str (print-price (get-price bundle))))
-	  (funcall (simple-bundle-list bundle) s)
-	  (definition-list
-	      `(("Item weight" . ,weight)
-		("Packing weight" . ,(format nil "~Ag" packing-weight))
-		("Total weight" . ,(format nil "~Ag" (+ packing-weight weight))))
-	      stream))))))
+;; (defmethod get-packing-details ((bundle bundle))
+;;   (lambda (stream)
+;;     (with-slots (packing-weight)
+;; 	bundle
+;;       (let ((weight (get-weight bundle)))
+;; 	(with-html-output (s stream :indent t)
+;; 	  (:h2 (str (print-price (get-price bundle))))
+;; 	  (funcall (simple-bundle-list bundle) s)
+;; 	  (definition-list
+;; 	      `(("Item weight" . ,weight)
+;; 		("Packing weight" . ,(format nil "~Ag" packing-weight))
+;; 		("Total weight" . ,(format nil "~Ag" (+ packing-weight weight))))
+;; 	      stream))))))
 
 (defun simple-bundle-list (bundle)
   (lambda (stream)
@@ -219,9 +222,9 @@ function just makes sure the right components are included."
   (lambda (stream)
     (single-item-form stream item) ""))
 
-(defmethod edit-widget ((item bundle))
-  (lambda (stream)
-    (bundle-form stream item) ""))
+;; (defmethod edit-widget ((item bundle))
+;;   (lambda (stream)
+;;     (bundle-form stream item) ""))
 
 (defmethod images-widget ((item line-item))
   (lambda (stream)
@@ -234,11 +237,11 @@ function just makes sure the right components are included."
     (tag-widget-printer item stream)
     ""))
 
-(defmethod bundle-widget ((bundle bundle))
-  (lambda (stream)
-    (funcall (simple-bundle-list bundle) stream)
-    (funcall (bundle-add-form bundle) stream)
-    ""))
+;; (defmethod bundle-widget ((bundle bundle))
+;;   (lambda (stream)
+;;     (funcall (simple-bundle-list bundle) stream)
+;;     (funcall (bundle-add-form bundle) stream)
+;;     ""))
 
 (defun sample-sidebar (item)
   (lambda (stream)
@@ -265,11 +268,11 @@ function just makes sure the right components are included."
 		(list "Display item" "Edit item" "Manage images" "Manage tags")
 		(list (display item) (edit-widget item) (images-widget item) (tag-widget item)))))
 
-(defmethod get-tabs ((item bundle))
-  (tabs (mapcar #'cons
-		(list "Display item" "Edit item" "Manage contents" "Manage images" "Manage tags")
-		(list (display item) (edit-widget item) (bundle-widget item)
-		      (images-widget item) (tag-widget item)))))
+;; (defmethod get-tabs ((item bundle))
+;;   (tabs (mapcar #'cons
+;; 		(list "Display item" "Edit item" "Manage contents" "Manage images" "Manage tags")
+;; 		(list (display item) (edit-widget item) (bundle-widget item)
+;; 		      (images-widget item) (tag-widget item)))))
 
 
 

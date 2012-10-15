@@ -82,8 +82,8 @@
     (when errors (setf (hunchentoot:session-value 'errors) errors))
     (hunchentoot:redirect (get-edit-edit-url item))))
 
-(defmethod maybe-update :after ((item bundle) parameters)
-  (hunchentoot:log-message* :info "~S" parameters))
+;; (defmethod maybe-update :after ((item bundle) parameters)
+;;   (hunchentoot:log-message* :info "~S" parameters))
 
 (defun maybe-add-image (picture line-item)
   (destructuring-bind (path filename content-type) picture
@@ -110,8 +110,8 @@
     (when-let (price (assoc-val 'price))
       (setf (price item) price))))
 
-(defmethod set-valid-fields ((item bundle) alist)
-  (set-generic-fields item alist))
+;; (defmethod set-valid-fields ((item bundle) alist)
+;;   (set-generic-fields item alist))
 
 (defun set-generic-fields (line-item alist)
   (flet ((assoc-val (val) (cdr (assoc val alist))))
@@ -157,8 +157,8 @@
 (defmethod validate ((item line-item) parameters)
   (validate 'item parameters))
 
-(defmethod validate ((item bundle) parameters)
-  (validate 'bundle parameters))
+;; (defmethod validate ((item bundle) parameters)
+;;   (validate 'bundle parameters))
 
 (defun validate-generic-line-item-fields (alist)
   "Tries to validate alist, returns two values, an alist with

@@ -51,11 +51,12 @@
    (image-counter :initform 0 :accessor image-counter
 		  :documentation "counter for image filenames"
 		  :type number)
-   (children :initform '() :accessor get-children
-	     :documentation "children of this object.  Objects may not
-	     contain any reference to themselves")
-   (children-quantity-map :initform nil :accessor get-children-quantity-map
-			  :documentation "If children exists, this
+   ;; (children :initform '() :accessor get-children
+   ;; 	     :documentation "children of this object.  Objects may not
+   ;; 	     contain any reference to themselves")
+   (children-qlist :initform (make-instance 'quantity-list)
+		   :accessor get-children-qlist
+		   :documentation "If children exists, this
 			  should be a quantity list mapping each child
 			  to the quantity contained in the bundle")))
 
@@ -121,3 +122,22 @@
 
 (defmethod get-view-url ((item line-item))
   (format nil "/view/item/~A" (sku item)))
+
+(defun item-list->table-form (items item-input-func item-display-func action-url)
+  (with-html-output-to-string (s)
+    ((:table :class "table table-striped")
+     ((:form :method :post :action action-url)
+      (dolist (item items)
+	(htm (:tr (:td (str (funcall item-display-func item)))
+		  (:td (:input :type "text" :class "input-mini"
+			       :name (funcall item-input-func item)
+			       :value 0)))))
+      ((:button :type "submit" :class "btn btn-primary") "Add to bundle")))))
+
+(defun all-items ()
+  (let ((items '()))
+    (ele:map-btree (lambda (k v)
+		     (declare (ignore k))
+		     (push v items))
+		   (items *web-store*))
+    items))

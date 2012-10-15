@@ -21,11 +21,24 @@
 	       (when line-item (featured line-item)))
  
      (textfield "packing-weight" s "Packing weight"
-		"The extra weight of packaging for this item: packing weight + item weight (the next field equals the total shipping weight"
+		"The extra weight of packaging for this item: packing weight + item weight (the next field equals the total shipping weight)"
 		(when line-item (packing-weight line-item)))
-     (textfield "weight" s "Weight" "The weight (net) of the item in grams"
+     (textfield "weight" s "Weight"
+		(if (and line-item (not (empty? (get-children-qlist line-item))))
+		    (format nil "The weight (net) of the item in
+		    grams. Computed weight for this item's contents is
+		    ~A"
+			    (get-weight (get-children-qlist line-item)))
+		    "The weight (net) of the item in grams")
+		
 		(when line-item (weight line-item)))
-     (textfield "price" s "Price" "The price of the item in euro cents"
+     (textfield "price" s "Price"
+		(if (and line-item (not (empty? (get-children-qlist line-item))))
+		    (format nil "The price of the item in euro cents.
+		    Computed price for this item's contents is ~A"
+			    (get-price (get-children-qlist line-item)))
+		    "The price of the item in euro cents")
+
 		(when line-item (price line-item)))
      
      (submit-button "Submit" s))))

@@ -6,15 +6,6 @@
 ;; set the HTML5 doctype
 (setf *prologue* "<!DOCTYPE html>")
 
-;; static content routes
-;; (restas:start '#:restas.directory-publisher
-;;               :port 8080
-;;               :context (restas:make-context (restas.directory-publisher:*baseurl* '("s"))
-;;                                             (restas.directory-publisher:*directory* #P"/home/ocorrain/lisp/dev/bootstrap/")
-;;                                             (restas.directory-publisher:*autoindex* nil)))
-
-
-
 (defun mount-webstore-content ()
   (restas:mount-submodule webstore-images (#:restas.directory-publisher)
     (restas.directory-publisher:*baseurl* '("images"))
@@ -23,7 +14,8 @@
   (restas:mount-submodule twitter-bootstrap-files (#:restas.directory-publisher)
     (restas.directory-publisher:*baseurl* '("s"))
     (restas.directory-publisher:*directory* (get-twitter-bootstrap-path))
-    (restas.directory-publisher:*autoindex* nil)))
+    (restas.directory-publisher:*autoindex* nil))
+  (restas:reconnect-all-routes))
 
 
 ;; ITEMs, bundles or single items
@@ -83,25 +75,69 @@
     (display-item-page item)
     hunchentoot:+http-not-found+))
 
+(defun get-image-number-as-string (image)
+  (second (split-sequence:split-sequence #\_
+					 (pathname-name image))))
+
+(defun image-edit-page (item)
+  (let ((this-url (format nil "/edit/item/~A/images" (sku item))))
+    (make-page (format nil "Editing images for ~A" (sku item))
+	       (concatenate 'string (edit-tabs item "Images") (image-form item)
+			    (image-thumbnails (images item)
+					      (lambda (image)
+						(with-html-output-to-string (s)
+						  (:img :src (get-thumb-url image))
+						  (:br)
+						  ((:a :class "btn btn-danger"
+						       :href (url-rewrite:add-get-param-to-url this-url
+											       "delete"
+											       (get-image-number-as-string image)))
+						   "Delete"))))) 
+	       (edit-bar "All items"))))
+
 (restas:define-route r/edit-item/images
     ("/edit/item/:(sku)/images")
   (if-let (item (get-item sku))
-    (make-page (format nil "Editing images for ~A" (sku item))
-	       (concatenate 'string (edit-tabs item "Images") (image-form item)
-			    (item-gallery item)) 
-	       (edit-bar "All items"))))
+    (progn
+      (when-let (image-to-delete (hunchentoot:get-parameter "delete"))
+	(setf (images item) (remove-if (lambda (i)
+					 (string-equal image-to-delete
+						       (get-image-number-as-string i)))
+				       (images item))))
+      (image-edit-page item))
+    hunchentoot:+http-not-found+))
 
 (restas:define-route r/edit-item/images/post
     ("/edit/item/:(sku)/images" :method :post)
   (if-let (item (get-item sku))
     (progn
       (when-let (picture (hunchentoot:post-parameter "picture"))
-      (maybe-add-image picture item))
-      (make-page (format nil "Editing images for ~A" (sku item))
-		 (concatenate 'string (edit-tabs item "Images") (image-form item)
-			      (item-gallery item))
-		 (edit-bar "All items")))
+	(maybe-add-image picture item))
+      (image-edit-page item))
     hunchentoot:+http-not-found+))
+
+(restas:define-route r/edit-item/contents
+    ("/edit/item/:(sku)/contents")
+  (if-let (item (get-item sku))
+    (bundle-edit-page item)
+    hunchentoot:+http-not-found+))
+
+(restas:define-route r/edit-item/contents/post
+    ("/edit/item/:(sku)/contents" :method :post)
+  (if-let (item (get-item sku))
+    (progn (maybe-update-bundle item)
+	   (bundle-edit-page item))
+    hunchentoot:+http-not-found+))
+
+(defun maybe-update-bundle (bundle)
+  (dolist (item-q (get-valid-objects-from-post (hunchentoot:post-parameters*)))
+    (destructuring-bind (item . quantity) item-q
+      (when (not (equal item bundle))
+	(set-bundle-quantity item bundle quantity)))))
+
+
+
+
 
 
 ;; (make-page (format nil "Editing images for ~A" (sku item))
@@ -130,10 +166,10 @@
       (make-tags-page item)) 
     hunchentoot:+http-not-found+))
 
-(restas:define-route r/edit-item/contents
-    ("/edit/item/:(sku)/contents")
-  (cl-who:with-html-output-to-string (s)
-    (format s "Editing ~A contents" sku)))
+;; (restas:define-route r/edit-item/contents
+;;     ("/edit/item/:(sku)/contents")
+;;   (cl-who:with-html-output-to-string (s)
+;;     (format s "Editing ~A contents" sku)))
 
 (restas:define-route r/edit-item/edit
     ("/edit/item/:(sku)/edit")
@@ -178,14 +214,6 @@
     (when-let (thumbs (remove-if-not #'published
 				   (ele:pset-list (tag-members tag))))
       (str (thumbnails thumbs #'render-thumb-display)))))
-
-(restas:define-route r/view-tag
-    ("/view/tag/:(tag)")
-  (if-let (tag-object (get-tag tag))
-    (make-page (tag-name tag-object)
-	       (tag-display-page tag-object)
-	       (main-site-bar (tag-name tag-object)))
-    hunchentoot:+http-not-found+))
 
 (restas:define-route r/edit-tag/view 
     ("/edit/tag/:(tag)/view")
@@ -236,86 +264,18 @@
     (when (and sku-item valid-quantity)
       (add-item sku-item (get-or-initialize-cart) valid-quantity))))
 
-(restas:define-route r/shopping-cart/view ("/shopping-cart")
-  (make-page "View shopping cart"
-	     (shopping-cart-form (get-or-initialize-cart))
-	     (main-site-bar "")))
 
-(restas:define-route r/shopping-cart/view/post
-    ("/shopping-cart" :method :post)
-  (maybe-update-cart (get-or-initialize-cart) (hunchentoot:post-parameters*))
-  (make-page "View shopping cart"
-	     (shopping-cart-form (get-or-initialize-cart))
-	     (main-site-bar "")))
 
-(defun maybe-update-cart (cart parameters)
-  (dolist (p parameters)
-    (if-let (item (get-item (car p)))
-      (if-let (quantity (validate-number (cdr p)))
-	(set-item-quantity item cart quantity)))))
+(defun get-valid-objects-from-post (parameters)
+  (let ((valid '()))
+    (dolist (p parameters)
+      (when-let (item (get-item (car p)))
+	(when-let (quantity (validate-number (cdr p)))
+	  (push (cons item quantity) valid))))
+    valid))
 
-(restas:define-route r/shopping-cart/checkout
-    ("/checkout")
-  (make-page "Enter address details"
-	     (customer-address-content)
-	     (main-site-bar "")))
 
-(restas:define-route r/shopping-cart/checkout/post
-    ("/checkout" :method :post)
-  (make-page "Enter address details"
-	     (customer-address-content)
-	     (main-site-bar "")))
 
-(restas:define-route r/shopping-cart/place-order
-    ("/place-order" :method :post)
-  (multiple-value-bind (customer errors)
-      (maybe-create/update-customer)
-    (multiple-value-bind (valid verrors)
-	(is-valid-customer? customer)
-      (if valid
-	  (make-page "Finalize order"
-		     (validate-or-cancel-order)
-		     (main-site-bar ""))
-	  (make-page "Re-enter address details"
-		     (customer-address-content (append errors (list verrors)))
-		     (main-site-bar ""))))))
-
-(restas:define-route r/shopping-cart/place-order/get
-    ("/place-order")
-  (multiple-value-bind (customer errors)
-      (maybe-create/update-customer)
-    (multiple-value-bind (valid verrors)
-	(is-valid-customer? customer)
-      (if valid
-	  (make-page "Finalize order"
-		     (validate-or-cancel-order)
-		     (main-site-bar ""))
-	  (make-page "Re-enter address details"
-		     (customer-address-content (append errors (list verrors)))
-		     (main-site-bar ""))))))
-
-(defun validate-or-cancel-order ()
-  (let ((cart (get-or-initialize-cart))
-	(customer (get-or-initialize-customer)))
-    (with-html-output-to-string (s)
-      ((:div :class "row")
-       ((:div :class "span5")
-	((:div :class "well")
-	 (str (display-customer customer))))
-       ((:div :class "span5")
-	((:div :class "well")
-	 (str (print-shopping-cart cart)))))
-      ((:div :class "row")
-       ((:div :class "span5")
-	((:a :href "/checkout" :class "btn btn-primary pull-left")
-	 "Change address"))
-       ((:div :class "span5")
-	((:a :href "/shopping-cart" :class "btn btn-primary pull-right")
-	 "Change shopping cart")))
-      ((:div :class "row")
-       ((:div :class "span3")
-	((:a :href "/gateway" :class "btn btn-large btn-warning")
-	 "PLACE ORDER"))))))
 
 
 

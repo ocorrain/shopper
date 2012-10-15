@@ -43,3 +43,20 @@
 				    (funcall item-function (qlist-entry-item qentry))
 				    (qlist-entry-quantity qentry)))
 			 qlist)))
+
+(defun qlist->table-form (qlist item-input-func item-display-func action-url)
+  (with-html-output-to-string (s)
+    ((:table :class "table table-striped")
+     ((:form :method "post" :action action-url)
+      (dolist (entry (items qlist))
+	(htm (:tr (:td (str (funcall item-display-func (qlist-entry-item entry))))
+		  (:td (:input :type "text" :class "input-mini"
+			       :name (funcall item-input-func (qlist-entry-item entry))
+			       :value (qlist-entry-quantity entry))))))
+      ((:button :type "submit" :class "btn btn-success") "Update")))))
+
+(defmethod contains? ((qlist quantity-list) (item line-item))
+  (member item (mapcar #'qlist-entry-item (items qlist))))
+
+(defmethod contains? ((item1 line-item) (item2 line-item))
+  (contains? (get-children-qlist item1) item2))

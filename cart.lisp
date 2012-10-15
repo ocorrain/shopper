@@ -104,8 +104,9 @@
 				    (:td (str (print-price (* price quantity))))
 				    (:td ((:a :href (get-view-url item))
 					  (str (title item)))
-					 (when (typep item 'bundle)
-					   (funcall (simple-bundle-list item) s)))))))))))))
+					 ;; (when (typep item 'bundle)
+					 ;;   (funcall (simple-bundle-list item) s))
+					 )))))))))))
 
 
 (defun shopping-cart-form (cart)
