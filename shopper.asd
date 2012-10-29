@@ -15,8 +15,11 @@
 	       :cl-fad
 	       :drakma
 	       :cl-html-parse)
-  :components ((:file "routes")
+  :components ((:file "shopper")
 	       (:file "display-routes")
+	       (:file "edit-routes")
+	       (:file "tag-routes")
+	       (:file "cart-routes")
 	       (:file "js")
 	       (:file "widgets")
 	       (:file "item")

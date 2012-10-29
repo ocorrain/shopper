@@ -26,7 +26,7 @@ function just makes sure the right components are included."
 	 ((:div :class "nav-collapse collapse")
 	  ((:ul :class "nav")
 	   ((:li :class "active")
-	    ((:a :href "#") "Home"))
+	    ((:a :href "/") "Home"))
 	   (:li ((:a :href "#about") "About"))
 	   (:li ((:a :href "#contact") "Contact"))))
 	 

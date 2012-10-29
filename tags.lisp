@@ -36,17 +36,23 @@
 (defun tagged? (item tag)
   (ele:find-item tag (tags item)))
 
+(defun empty-tag (tag)
+  (null (ele:pset-list (tag-members tag))))
+
 (defun all-tags ()
   (ele:get-instances-by-class 'tag))
+
+(defun tags-with-members ()
+  (remove-if #'empty-tag (all-tags)))
 
 (defun menu-tags ()
   (remove-if-not (lambda (tag)
 		   (and (appears-in-menu tag)
 			(not (featured tag))))
-		 (all-tags)))
+		 (tags-with-members)))
 
 (defun featured-tags ()
-  (remove-if-not #'featured (all-tags)))
+  (remove-if-not #'featured (tags-with-members)))
 
 (defun get-tag (webform)
   (ele:get-instance-by-value 'tag 'webform webform))
@@ -128,10 +134,21 @@
 (defun collect-tags-with (func)
   (remove-if-not (lambda (tag)
 		   (funcall func tag))
-		 (all-tags)))
+		 (tags-with-members)))
 
 (defun tag->nav (list-of-tags)
   (mapcar (lambda (tag)
 	    (cons (get-view-url tag)
 			 (tag-name tag)))
 	  list-of-tags))
+
+(defmethod display-an-image ((tag tag))
+  (let ((member-list (ele:pset-list (tag-members tag))))
+    (when member-list
+      (with-html-output-to-string (s)
+	(:img :class "img-polaroid"
+	      :src (get-thumb-url
+		    (random-elt (mappend #'images
+					 member-list))))))))
+
+

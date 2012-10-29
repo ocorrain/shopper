@@ -60,3 +60,9 @@
 
 (defmethod contains? ((item1 line-item) (item2 line-item))
   (contains? (get-children-qlist item1) item2))
+
+(defmethod get-price ((qlist quantity-list))
+  (qlist-reduce (items qlist) :item-function #'get-price))
+
+(defmethod get-weight ((qlist quantity-list))
+  (qlist-reduce (items qlist) :item-function #'get-weight))

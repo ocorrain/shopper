@@ -40,7 +40,7 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 (defun get-thumbnail-dimensions (width height box-width box-height)
   (let ((image-aspect (/ width height))
 	(box-aspect (/ box-width box-height)))
-    (format t "Image aspect: ~A ; box aspect: ~A" image-aspect box-aspect)
+;    (format t "Image aspect: ~A ; box aspect: ~A" image-aspect box-aspect)
     (let* ((new-width (if (> image-aspect box-aspect)
 			  box-width (truncate (* box-height image-aspect))))
 	   (new-height (if (> image-aspect box-aspect)
@@ -91,9 +91,10 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 		(with-html-output-to-string (s)
 		  (:img :src (get-thumb-url image))))))
 
-(defun display-an-image (item)
+(defmethod display-an-image ((item line-item))
   (with-html-output-to-string (s)
     (:img :class "img-polaroid" :src (get-thumb-url (random-elt (images item))))))
+
 
 (defun display-gallery (images id)
   (let ((thumb-width (get-config-option :thumbnail-width))

@@ -10,7 +10,7 @@
     pics))
 
 (defvar *pictures*
-  (get-pictures "/home/shopper/sampleimages/"))
+  (get-pictures "/home/ocorrain/babes/"))
 
 (defun count-lines (filename)
   (with-open-file (f filename)
@@ -53,7 +53,7 @@
 			    (get-webform (random-words 1))))
   (provision-items-test number-of-items)
   (provision-tags-test number-of-tags)
-  (let ((items (ele:get-instances-by-class 'single-item))
+  (let ((items (ele:get-instances-by-class 'line-item))
 	(tags (all-tags)))
     (provision-images-test items images-per-item)
     (tag-items-test items tags)))
@@ -69,7 +69,8 @@
 
 (defun provision-tags-test (number)
   (dotimes (i number)
-    (let ((tag (make-instance 'tag :name (random-words 3))))
+    (let ((tag (make-instance 'tag :name (random-words 3) :description (random-words 10)
+			      :featured (flip) :appears-in-menu (flip))))
       (format t "~&Provisioned ~A, webform ~A~%" (tag-name tag) (webform tag)))))
 
 (defun provision-images-test (items number-per-item)
@@ -88,15 +89,15 @@
 (defun provision-items-test (number)
   (dotimes (i number)
     (format t "Provisioning item ~A~%" (+ i 1))
-    (make-instance 'single-item
-		 :title (random-words 3)
-		 :short-description (random-words 30)
-		 :long-description (random-words 150)
-		 :weight (random 2000)
-		 :price (random 10000)
-		 :meta (random-word-list 10)
-		 :featured (flip)
-		 :published (flip))))
+    (make-instance 'line-item
+		   :title (random-words 3)
+		   :short-description (random-words 10)
+		   :long-description (random-words 40)
+		   :weight (random 2000)
+		   :price (random 10000)
+		   :meta (random-word-list 10)
+		   :featured (flip)
+		   :published (flip))))
 
 ;; (defun export-items-test (filename)
 ;;   (with-open-file (f filename :direction :output :if-exists :supersede)
@@ -141,20 +142,20 @@
        (equal (subseq thing 0 (min 3 (length thing)))
 	      (list :a :class "title "))))
 
-(defun get-pictures (url output-directory)
-  (ensure-directories-exist output-directory)
-  (let ((urls (get-babe-urls (get-babes (get-babe-html url)))))
-    (print urls)
-    (dolist (u urls)
-      (let ((type (pathname-type url)))
-	(when (and (stringp type)
-		   (equal (string-downcase type) "jpg")))
-	(with-open-file (f (make-pathname
-			    :name (pathname-name u)
-			    :type "jpg"
-			    :defaults output-directory)
-			   :direction :output  :element-type 'unsigned-byte)
-	  (multiple-value-bind (seq retval)
-	      (drakma:http-request u)
-	    (when (= retval 200)
-	      (write-sequence seq f))))))))
+;; (defun get-pictures (url output-directory)
+;;   (ensure-directories-exist output-directory)
+;;   (let ((urls (get-babe-urls (get-babes (get-babe-html url)))))
+;;     (print urls)
+;;     (dolist (u urls)
+;;       (let ((type (pathname-type url)))
+;; 	(when (and (stringp type)
+;; 		   (equal (string-downcase type) "jpg")))
+;; 	(with-open-file (f (make-pathname
+;; 			    :name (pathname-name u)
+;; 			    :type "jpg"
+;; 			    :defaults output-directory)
+;; 			   :direction :output  :element-type 'unsigned-byte)
+;; 	  (multiple-value-bind (seq retval)
+;; 	      (drakma:http-request u)
+;; 	    (when (= retval 200)
+;; 	      (write-sequence seq f))))))))

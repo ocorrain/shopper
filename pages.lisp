@@ -42,48 +42,69 @@
 ;; 	     ((:div :class "thumbnail")
 ;; 	      (str (funcall render-func obj)))))))))
 
-(defmethod render-thumb ((obj line-item))
+(defmethod render-very-short ((obj line-item))
   (with-html-output-to-string (s)
-    (when (images obj)
-      (htm (str (display-an-image obj))))
-    (:h5 (str (title obj)))
-    (:p (when (published obj)
-	  (htm ((:span :class "label") "Published")
-	       (when (featured obj)
-		 (htm ((:span :class "label label-success") "Featured"))))))
+    ((:a :href (get-view-url obj))
+     (:h5 (str (title obj)))
+     (when (images obj)
+       (htm (str (display-an-image obj)))))))
+
+
+(defmethod render-thumb ((obj line-item) &optional edit)
+  (with-html-output-to-string (s)
+    ((:a :href (get-view-url obj))
+     (when (images obj)
+       (htm (str (display-an-image obj))))
+     (:h5 (str (title obj))))
+    
+    (when edit
+      (htm (:p (when (published obj)
+		 (htm ((:span :class "label") "Published")
+		      (when (featured obj)
+			(htm ((:span :class "label label-success") "Featured"))))))))
+    
     
     (:p (str (short-description obj)))
     
-    ((:a :class "btn btn-mini" :href (get-edit-edit-url obj))
-     "Edit")
-    ((:a :class "btn btn-mini btn-danger pull-right" :href (get-delete-url obj))
-     "Delete")))
+    (when edit
+      (htm ((:a :class "btn btn-mini" :href (get-edit-edit-url obj))
+	    "Edit")
+	   ((:a :class "btn btn-mini btn-danger pull-right" :href (get-delete-url obj))
+	    "Delete")))
 
-(defmethod render-thumb ((obj tag))
+    (when (not edit)
+      (htm (str (cart-widget obj))))))
+
+(defmethod render-thumb ((obj tag) &optional edit)
   (with-html-output-to-string (s)
+    (htm (str (display-an-image obj)))
     (:h5 (str (tag-name obj)))
-    (:p (when (appears-in-menu obj)
+
+    (when edit
+      (htm (:p (when (appears-in-menu obj)
 	    (htm ((:span :class "label") "Menu")
 		 (when (featured obj)
-		   (htm ((:span :class "label label-success") "Featured"))))))
+		   (htm ((:span :class "label label-success") "Featured"))))))))
+    
     (:p (str (description obj)))
     
-    ((:a :class "btn btn-mini" :href (get-edit-edit-url obj))
-     "Edit")
-    ((:a :class "btn btn-mini btn-danger pull-right" :href (get-delete-url obj))
-     "Delete")))
+    (when edit
+      (htm ((:a :class "btn btn-mini" :href (get-edit-edit-url obj))
+	    "Edit")
+	   ((:a :class "btn btn-mini btn-danger pull-right" :href (get-delete-url obj))
+	    "Delete")))))
 
 (defmethod get-delete-url ((tag tag))
   (format nil "/delete/tag/~A" (webform tag)))
 
 
-(defmethod render-thumb-display ((obj line-item))
-  (with-html-output-to-string (s)
-    (when (images obj)
-      (htm (str (display-an-image obj))))
-    (:h5 (str (title obj)))
-    (:p (str (short-description obj)))
-    (str (cart-widget obj))))
+;; (defmethod render-thumb-display ((obj line-item))
+;;   (with-html-output-to-string (s)
+;;     (when (images obj)
+;;       (htm (str (display-an-image obj))))
+;;     (:h5 (str (title obj)))
+;;     (:p (str (short-description obj)))
+;;     ))
 
 
 
@@ -207,8 +228,13 @@
     ((:div :class "row")
      ((:div :class "span5")
       (:h2 (str (title item)))
+      
+
       ((:p :class "lead") (str (short-description item)))
       (:p (str (long-description item)))
+
+      (str (cart-widget item))
+
       (when (not (empty? (get-children-qlist item)))
 	(htm (:h5 "Contains")
 	     (:ul (dolist (i (items (get-children-qlist item)))
@@ -217,8 +243,12 @@
      ((:div :class "span5")
       ((:div :class "well")
        (str (carousel "imageCarousel" (images item) #'full-image-element))
-       (:p "Pricing and adding to cart stuff goes here")
-       (str (cart-widget item)))))))
+       ((:dl :class "dl-horizontal")
+	(:dt "Price")
+	(:dd (str (print-price (get-price item))))
+	(:dt "Weight")
+	(:dd (fmt "~A g" (get-weight item))))
+       )))))
 
 (defun full-image-element (image)
   (with-html-output-to-string (s)

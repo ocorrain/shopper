@@ -66,13 +66,9 @@
 
 (defgeneric get-price (item))
 
-(defmethod get-price ((qlist quantity-list))
-  (qlist-reduce (items qlist) :item-function #'get-price))
 
 (defgeneric get-weight (item))
 
-(defmethod get-weight ((qlist quantity-list))
-  (qlist-reduce (items qlist) :item-function #'get-weight))
 
 (defmethod get-next-image-stub ((item line-item))
   (prog1
@@ -141,3 +137,6 @@
 		     (push v items))
 		   (items *web-store*))
     items))
+
+(defmethod get-view-url ((item line-item))
+  (format nil "/view/item/~A" (sku item)))

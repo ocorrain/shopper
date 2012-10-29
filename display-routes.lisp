@@ -1,5 +1,11 @@
 (in-package #:shopper)
 
+(restas:define-route r/index-page
+    ("/")
+  (make-page (format nil "Welcome to ~A" (store-name *web-store*))
+	     (thumbnails (all-items)
+			 #'render-thumb)
+	     (main-site-bar "")))
 
 (restas:define-route r/view-tag
     ("/view/tag/:(tag)")
@@ -88,3 +94,35 @@
        ((:div :class "span3")
 	((:a :href "/gateway" :class "btn btn-large btn-warning")
 	 "PLACE ORDER"))))))
+
+(defun tag-buddies (item)
+  (remove item (mappend (lambda (tag)
+			  (ele:pset-list (tag-members tag)))
+			(get-tags item))))
+
+(defun display-related-items (item)
+  (when-let (tbs (tag-buddies item))
+    (thumbnails (if (< (length tbs) 4)
+			   tbs
+			   (subseq tbs 0 4))
+		       #'render-very-short
+		       3)))
+
+
+(defun view-item-page (item)
+  (make-page (format nil "Viewing ~A" (title item))
+	     (with-html-output-to-string (s)
+	       (str (display-item-content item))
+	       (str (display-related-items item)))
+	     
+	     (main-site-bar "")
+	     (with-html-output-to-string (s)
+	       (:script "$('.carousel').carousel()"))))
+
+(restas:define-route r/view-item
+    ("/view/item/:(sku)")
+  (if-let (item (get-item sku))
+    (view-item-page item)
+    hunchentoot:+http-not-found+))
+
+
