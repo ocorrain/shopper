@@ -16,9 +16,11 @@
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/shopping-cart/view ("/shopping-cart")
-  (make-page "View shopping cart"
-	     (shopping-cart-form (get-or-initialize-cart))
-	     (main-site-bar "")))
+    (basic-page "View shopping cart"
+	      (with-html-output-to-string (s)
+		((:div :class "container")
+		 (str (shopping-cart-form (get-or-initialize-cart)))))))
+
 
 (restas:define-route r/shopping-cart/view/post
     ("/shopping-cart" :method :post)

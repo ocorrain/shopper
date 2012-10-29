@@ -111,24 +111,51 @@
 
 (defun shopping-cart-form (cart)
   (with-html-output-to-string (s)
+    ((:div :class "row")
+     ((:div :class "span7")
+      (:h3 "Shopping cart")
+      (:p "These are the items in your shopping cart.  You can edit
+    the number of each item by entering the quantity beside the item
+    and clicking 'Update'.  To remove an item, set its quantity to zero."))
+     ((:div :class "span5")
+      ((:div :class "well well-small")
+       ((:dl :class "dl-horizontal")
+	(:dt "Total price")
+	(:dd (str (print-price (get-price cart))))
+	(:dt "Weight")
+	(:dd (fmt "~Ag" (get-weight cart)))))))
+    
     ((:form :class "form-horizontal" :action "/shopping-cart" :method :post)
+     ((:div :class "row")
+      ((:button :type "submit" :class "btn btn-large pull-left") "Update")
+      ((:a :href "/checkout" :class "pull-right btn btn-large btn-primary")
+       "Check out")
+      ((:a :href "/" :class "pull-right btn btn-large btn-success")
+       "Continue shopping"))
+
+     (:hr)
+
      (dolist (i (items cart))
        (destructuring-bind (item quantity) i
 	 (htm ((:div :class "row")
-	       ((:div :class "span3")
-		(str (display-an-image item)))
-	       ((:div :class "span5")
-		(:p (str (short-description item))))
+	       ((:div :class "span2")
+		(str (display-a-small-image item)))
+	       ((:div :class "span8")
+		(:h5 (str (title item)))
+		(:p (str (short-description item)))
+		(:p (:em "Item price: ") (str (print-price (get-price item)))))
 	       ((:div :class "span2")
 		(:input :type "text" :class "input-mini" :name (sku item)
-			:value quantity))))
-	 ;; (htm ((:div :class "control-group")
-	 ;;       ((:label :class "control-label" :for (sku item))
-	 ;; 	(str (title item)))
-	 ;;       ((:div :class "controls")
-	 ;; 	)))
-	 ))
-     ((:button :type "submit" :class "btn btn-large pull-left") "Update"))
+			:value quantity))))))
+     
+     (:hr)
+     ((:div :class "row")
+      ((:button :type "submit" :class "btn btn-large pull-left") "Update")
+      ((:a :href "/checkout" :class "pull-right btn btn-large btn-primary")
+       "Check out")
+      ((:a :href "/" :class "pull-right btn btn-large btn-success")
+       "Continue shopping")))
+    
     
 
     ;; (dolist (i (items cart)))
