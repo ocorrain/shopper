@@ -101,6 +101,8 @@
 (defun get-full-size-path (path)
   (pathname-name-concat path "_full"))
 
+(defun get-small-size-path (path)
+  (pathname-name-concat path "_small"))
 
 (defmethod set-valid-fields ((item line-item) alist)
   (set-generic-fields item alist)

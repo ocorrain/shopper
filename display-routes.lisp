@@ -23,9 +23,11 @@
 (restas:define-route r/shopping-cart/view/post
     ("/shopping-cart" :method :post)
   (maybe-update-cart (get-or-initialize-cart) (hunchentoot:post-parameters*))
-  (make-page "View shopping cart"
-	     (shopping-cart-form (get-or-initialize-cart))
-	     (main-site-bar "")))
+  (basic-page "View shopping cart"
+	      (with-html-output-to-string (s)
+		((:div :class "container")
+		 (str (shopping-cart-form (get-or-initialize-cart)))))))
+
 
 (defun maybe-update-cart (cart parameters)
   (dolist (item-q (get-valid-objects-from-post parameters))

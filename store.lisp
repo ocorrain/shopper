@@ -26,7 +26,9 @@
   '((:thumbnail-width . 300)
     (:thumbnail-height . 300)
     (:display-width . 500)
-    (:display-height . 500)))
+    (:display-height . 500)
+    (:small-width . 100)
+    (:small-height . 100)))
 
 (ele:defpclass web-store ()
   ((sku-prefix :initarg :sku-prefix :accessor sku-prefix)

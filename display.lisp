@@ -3,7 +3,22 @@
 
 (in-package #:shopper)
 
+
 (defun make-page (title body &optional sidebar end-matter)
+  "each of TITLE BODY and SIDEBAR should return strings.  This
+function just makes sure the right components are included."
+  (basic-page title
+	      (with-html-output-to-string (s)
+		((:div :class "container")
+		 ((:div :class "row")
+		  ((:div :class "span2")
+		   (when sidebar (htm (str sidebar))))
+		  ((:div :class "span10")
+		   (str body))))
+		(when end-matter (str end-matter)))))
+
+
+(defun basic-page (title body)
   "each of TITLE BODY and SIDEBAR should return strings.  This
 function just makes sure the right components are included."
   (with-html-output-to-string (s nil :prologue t :indent t)
@@ -39,18 +54,12 @@ function just makes sure the right components are included."
 		 ;; (fmt "~A items in cart" (count-items-in cart))
 		 ))))))
       
-      
-      
-      ((:div :class "container")
-       ((:div :class "row")
-	((:div :class "span2")
-	 (when sidebar (htm (str sidebar))))
-	((:div :class "span10")
-	 (str body))))
+      (str body)
 	    
       (:script :src "http://code.jquery.com/jquery-latest.js")
-      (:script :src "/s/js/bootstrap.min.js")
-      (when end-matter (str end-matter))))))
+      (:script :src "/s/js/bootstrap.min.js")))))
+
+
 
 (defun standard-page (title func)
   (make-page title (lambda (stream)
@@ -577,3 +586,47 @@ function just makes sure the right components are included."
     ("Yemen" . "Yemen")
     ("Zambia" . "Zambia")
     ("Zimbabwe" . "Zimbabwe")))
+
+
+
+
+
+
+  ;; (with-html-output-to-string (s nil :prologue t :indent t)
+  ;;   ((:html :lang "en") (:head (:title (str title))
+  ;; 			       (:link :href "/s/css/bootstrap.min.css" :rel "stylesheet")
+  ;; 			       (:style "body {
+  ;;       padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+  ;;     }"))
+  ;;    (:body
+  ;;     ((:div :class "navbar navbar-inverse navbar-fixed-top")
+  ;;      ((:div :class "navbar-inner")
+  ;; 	((:div :class "container")
+  ;; 	 ((:a :class "btn btn-navbar" :data-toggle "collapse" :data-target ".nav-collapse")
+  ;; 	  (:span :class "icon-bar")
+  ;; 	  (:span :class "icon-bar")
+  ;; 	  (:span :class "icon-bar"))
+	 
+
+  ;; 	 ((:a :class "brand" href="#") (str (store-name *web-store*)))
+  ;; 	 ((:div :class "nav-collapse collapse")
+  ;; 	  ((:ul :class "nav")
+  ;; 	   ((:li :class "active")
+  ;; 	    ((:a :href "/") "Home"))
+  ;; 	   (:li ((:a :href "#about") "About"))
+  ;; 	   (:li ((:a :href "#contact") "Contact"))))
+	 
+  ;; 	 (when-let (cart (get-cart))
+  ;; 	   (htm ((:a :href "/checkout" :class "pull-right btn btn btn-primary")
+  ;; 		 "CHECKOUT")
+  ;; 		((:a :href "/shopping-cart" :class "pull-right btn btn-warning")
+  ;; 		 (:i :class "icon-shopping-cart icon-white")
+  ;; 		 (str (count-items-in cart))
+  ;; 		 ;; (fmt "~A items in cart" (count-items-in cart))
+  ;; 		 ))))))
+      
+
+	    
+  ;;     (:script :src "http://code.jquery.com/jquery-latest.js")
+  ;;     (:script :src "/s/js/bootstrap.min.js")
+  ;;     ))))

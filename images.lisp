@@ -58,6 +58,10 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
   (concatenate 'string "/images/"
 	       (namestring (get-full-size-path path))))
 
+(defun get-small-url (path)
+  (concatenate 'string "/images/"
+	       (namestring (get-small-size-path path))))
+
 (defun resize-all-images ()
   (ele:map-btree (lambda (key item)
 		   (declare (ignore key))
@@ -94,6 +98,10 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 (defmethod display-an-image ((item line-item))
   (with-html-output-to-string (s)
     (:img :class "img-polaroid" :src (get-thumb-url (random-elt (images item))))))
+
+(defmethod display-a-small-image ((item line-item))
+  (with-html-output-to-string (s)
+    (:img :class "img-polaroid" :src (get-small-url (random-elt (images item))))))
 
 
 (defun display-gallery (images id)
@@ -147,4 +155,7 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
       (create-thumbnail dest-path (get-full-size-path dest-path)
 			(get-config-option :display-width)
 			(get-config-option :display-height))
+      (create-thumbnail dest-path (get-small-size-path dest-path)
+			(get-config-option :small-width)
+			(get-config-option :small-height))
       (push (make-pathname :name stub :type type) (images line-item)))))
