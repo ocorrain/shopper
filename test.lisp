@@ -9,9 +9,6 @@
 					  "jpg")))
     pics))
 
-(defvar *pictures*
-  (get-pictures "/home/ocorrain/babes/"))
-
 (defun count-lines (filename)
   (with-open-file (f filename)
     (do ((l (read-line f nil 'eof) (read-line f nil 'eof))
@@ -45,7 +42,8 @@
   (if (zerop (random 2))
       nil t))
 
-(defun test-provision-store (pathname number-of-items number-of-tags images-per-item)
+(defun test-provision-store (&key pathname number-of-items number-of-tags images-per-item
+			     sample-image-directory)
   (new-web-store (random-words 4)
 		 (random-letters 3)
 		 (random-letters 3)
@@ -55,7 +53,7 @@
   (provision-tags-test number-of-tags)
   (let ((items (ele:get-instances-by-class 'line-item))
 	(tags (all-tags)))
-    (provision-images-test items images-per-item)
+    (provision-images-test (get-pictures sample-image-directory) items images-per-item)
     (tag-items-test items tags)))
 
 
@@ -71,13 +69,13 @@
   (dotimes (i number)
     (let ((tag (make-instance 'tag :name (random-words 3) :description (random-words 10)
 			      :featured (flip) :appears-in-menu (flip))))
-      (format t "~&Provisioned ~A, webform ~A~%" (tag-name tag) (webform tag)))))
+      (format t "~&New tag ~A, webform ~A~%" (tag-name tag) (webform tag)))))
 
-(defun provision-images-test (items number-per-item)
+(defun provision-images-test (images items number-per-item)
   (dolist (i items)
-    (format t "~&Provisioning ~A~%" (title i))
+    (format t "~&Adding images to ~A~%" (title i))
     (dotimes (n number-per-item)
-      (add-image (random-elt *pictures*) "something.jpg" i))))
+      (add-image (random-elt images) "something.jpg" i))))
 
 (defun tag-items-test (items tags)
   (dolist (i items)
