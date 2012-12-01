@@ -170,3 +170,14 @@
     ;;    (str (print-shopping-cart cart)))))
     ))
 
+(defun all-carts ()
+  (ele:get-instances-by-class 'shopping-cart))
+
+(defun cart->order (cart)
+  (make-instance 'order
+		 :order-state :order-generated
+		 :order-timestamps (list (cons :order-generated (get-universal-time)))
+		 :cart cart
+		 :reified-cart (reify cart)
+		 :order-price (get-price cart)))
+

@@ -1,6 +1,7 @@
 
-* TODO Bundles
+* DONE Bundles
   :LOGBOOK:
+  - State "DONE"       from "TODO"       [2012-12-01 Sat 10:34]
   - State "TODO"       from ""           [2012-03-31 Sat 14:22]
   :END:
   - bundles are sets of products (qlists)
@@ -55,3 +56,88 @@
   - a list of outstanding (and fulfilled) orders needs to be in the
     system, so vendors can check off fulfilled orders a view what is
     in the outgoing queue
+
+* TODO Paypal integration notes
+** SetExpressCheckoutAPI initial call
+  - METHOD :: SetExpressCheckout
+  - VERSION :: 94.0
+  - USER :: API username
+  - PWD :: API password
+  - SIGNATURE :: API_signature
+  - RETURN_URL :: return url
+  - CANCEL_URL :: cancel url
+  - REQCONFIRMSHIPPING :: confirmed = 1 ; not = 0
+  - NOSHIPPING :: display shipping address fields on paypal
+  - ALLOWNOTE :: Allow customer to enter a note to the merchant (0/1)
+  - HRDIMG :: URL for the image to appear on payment page (max 750x90)
+  - HDRBACKCOLOR :: background color for payment page header
+  - PAYFLOWCOLOR :: background for payment page
+  - EMAIL :: Email address of buyer
+  - SOLUTIONTYPE :: Sole / Mark
+*** address fields
+  - PAYMENTREQUEST_0_SHIPTONAME :: name for shipping
+  - PAYMENTREQUEST_0_SHIPTOSTREET :: street address 1
+  - PAYMENTREQUEST_0_SHIPTOSTREET2 :: street address 2
+  - PAYMENTREQUEST_0_SHIPTOCITY :: city name
+  - PAYMENTREQUEST_0_SHIPTOSTATE :: state/province
+  - PAYMENTREQUEST_0_SHIPTOZIP :: zip/postal code
+  - PAYMENTREQUEST_0_SHIPTOCOUNTRYCODE :: country code
+  - PAYMENTREQUEST_0_SHIPTOPHONENUM :: phone number
+  - PAYMENTREQUEST_0_ADDRESSSTATUS :: confirmed/unconfirmed
+*** payment fields
+  - PAYMENTREQUEST_0_AMT :: amount
+  - PAYMENTREQUEST_0_CURRENCYCODE :: currencycode
+  - PAYMENTREQUEST_0_PAYMENTACTION :: Sale
+  - PAYMENTREQUEST_0_SHIPPINGAMT :: total shipping costs for order
+  - PAYMENTREQUEST_0_INVNUM :: our invoice number
+*** payment details
+  - L_PAYMENTREQUEST_0_NAMEm :: item name
+  - L_PAYMENTREQUEST_0_DESCm :: item description
+  - L_PAYMENTREQUEST_0_AMTm :: item price
+  - L_PAYMENTREQUEST_0_QTYm :: item quantity
+  - L_PAYMENTREQUEST_0_ITEMWEIGHTVALUEm :: item weight
+  - L_PAYMENTREQUEST_0_ITEMURLm :: item URL
+  - L_PAYMENTREQUEST_0_ITEMCATEGORYm :: Physical
+  - L_PAYMENTREQUEST_n_NUMBERm :: SKU
+*** shipping options
+This is optional
+  - L_SHIPPINGOPTIONISDEFAULTn :: default shipping option (required)
+  - L_SHIPPINGOPTIONNAMEn :: internal name of shipping option
+  - L_SHIPPINGOPTIONAMOUNTn :: flat rate shipping price
+
+returns TOKEN, redirects to RETURN_URL or CANCEL_URL
+
+** GetExpressCheckoutDetails
+  - METHOD :: GetExpressCheckoutDetails
+  - VERSION :: XX.0
+  - USER :: API username
+  - PWD :: API password
+  - SIGNATURE :: API_signature
+  - TOKEN :: tokenValue
+  - PHONENUM :: buyer's phone number
+  - INVNUM :: our invoice number
+  - EMAIL :: email address of buyer
+  - PAYERID :: buyer paypal customer ID
+  - PAYERSTATUS :: buyer status (verified/unverified)
+  - COUNTRYCODE :: buyer's country code (ISO 2 char)
+  - BUSINESS :: Buyer's business name
+  - SALUTATION :: buyer's salutation
+  - FIRSTNAME :: buyer's first name
+  - MIDDLENAME :: buyer's middle name
+  - LASTNAME :: buyer's last name
+  - SUFFIX :: buyer's suffix
+*** address fields
+  - PAYMENTREQUEST_0_SHIPTONAME :: name for shipping
+  - PAYMENTREQUEST_0_SHIPTOSTREET :: street address 1
+  - PAYMENTREQUEST_0_SHIPTOSTREET2 :: street address 2
+  - PAYMENTREQUEST_0_SHIPTOCITY :: city name
+  - PAYMENTREQUEST_0_SHIPTOSTATE :: state/province
+  - PAYMENTREQUEST_0_SHIPTOZIP :: zip/postal code
+  - PAYMENTREQUEST_0_SHIPTOCOUNTRYCODE :: country code
+  - PAYMENTREQUEST_0_SHIPTOPHONENUM :: phone number
+  - PAYMENTREQUEST_0_ADDRESSSTATUS :: confirmed/unconfirmed
+*** payment details
+  - PAYMENTREQUEST_0_CURRENCYCODE :: currencycode
+  - RETURN_URL :: return url
+  - CANCEL_URL :: cancel url
+  - PAYMENTREQUEST_0_PAYMENTACTION :: Sale

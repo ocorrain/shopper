@@ -10,19 +10,74 @@
 	(incf (order-counter store)))))
 
 (ele:defpclass order ()
-  ((order-number :initarg :order-number :initform (get-next-order) :accessor order-number)
+  ((order-number :initarg :order-number :initform (get-next-order) :accessor order-number
+		 :index t)
    (order-state :initarg :order-state :initform nil :accessor order-state)
    (order-timestamps :initarg :order-timestamps :initform nil :accessor order-timestamps)
    (customer :initarg :customer :initform nil :accessor customer
 	     :documentation "Object holding customer details for this cart")
    (cart :initarg :cart :initform nil :accessor cart)
    (reified-cart :initarg :reified-cart :initform nil :accessor reified-cart)
-   (gateway-ref :initarg :gateway-ref :initform nil :accessor gateway-ref)
+   (gateway-ref :initarg :gateway-ref :initform nil :accessor gateway-ref
+		:index t)
+   (correlation-id :accessor correlation-id :initform nil :index t)
+   (payer-id :accessor payer-id :initform nil)
    (order-price :initarg :order-price :initform 0 :accessor order-price)))
 
-(defun convert-cart-to-order (cart)
-  (let ((order-price (get-price cart)))
-    (change-class cart 'order)
-    (setf (order-price cart) order-price))
-  cart)
+(defmethod add-order-timestamp (order timestamp-id)
+  (push (cons timestamp-id (get-universal-time)) (order-timestamps order))
+  (setf (order-state order) timestamp-id))
 
+(defmethod get-shipping-costs ((order order))
+  ;; fixme
+  100)
+
+(defun get-order (order-id)
+  (ele:get-instance-by-value 'order 'order-number order-id))
+
+(defun get-order-by-gateway-ref (gateway-ref)
+  (ele:get-instance-by-value 'order 'gateway-ref gateway-ref))
+
+(defmethod confirmation-url ((order order))
+  (format nil "/confirm/~A" (order-number order)))
+
+(restas:define-route order/confirm
+    ("/confirm/:(order-ref)")
+  (if-let (order (get-order order-ref))
+    (progn
+      (add-order-timestamp order :order-confirmed)
+      (if (paypal-api-call-doexpresscheckoutpayment order)
+	  (progn
+	    (hunchentoot:delete-session-value :cart)
+	    (make-page "Order confirmed"
+		       (with-html-output-to-string (s)
+			 (:h2 "Your order has been confirmed")
+			 (:p (:strong "Your reference ID: ")
+			     (str order-ref)))))))))
+
+
+(defmethod cancellation-url ((order order))
+  (format nil "/cancel/~A" (order-number order)))
+
+(restas:define-route order/cancel
+    ("/cancel/:(order-ref)")
+  (if-let (order (get-order order-ref))
+    (progn
+      (setf (hunchentoot:session-value :cart) (cart order))
+      (ele:drop-instance order)
+      (make-page "Order cancelled"
+		 (with-html-output-to-string (s)
+		   (:h2 "Your order has been cancelled")
+		   (:p "Items from your order have been returned to your shopping cart"))))))
+
+(restas:define-route order/cancel/paypal
+    ("/cancel")
+  (if-let (token (hunchentoot:get-parameter "token"))
+    (if-let (order (get-order-by-gateway-ref token))
+      (progn
+	(setf (hunchentoot:session-value :cart) (car order))
+	(ele:drop-instance order)
+	(make-page "Order cancelled"
+		   (with-html-output-to-string (s)
+		     (:h2 "Your order has been cancelled")
+		     (:p "Items from your order have been returned to your shopping cart")))))))

@@ -67,8 +67,10 @@
 
 (defun provision-tags-test (number)
   (dotimes (i number)
-    (let ((tag (make-instance 'tag :name (random-words 3) :description (random-words 10)
-			      :featured (flip) :appears-in-menu (flip))))
+    (let* ((appears-in-menu (flip))
+	   (featured (if appears-in-menu (flip) nil))
+	   (tag (make-instance 'tag :name (random-words 3) :description (random-words 10)
+			       :featured featured :appears-in-menu appears-in-menu)))
       (format t "~&New tag ~A, webform ~A~%" (tag-name tag) (webform tag)))))
 
 (defun provision-images-test (images items number-per-item)
@@ -86,16 +88,19 @@
 
 (defun provision-items-test (number)
   (dotimes (i number)
-    (format t "Provisioning item ~A~%" (+ i 1))
-    (make-instance 'line-item
-		   :title (random-words 3)
-		   :short-description (random-words 10)
-		   :long-description (random-words 40)
-		   :weight (random 2000)
-		   :price (random 10000)
-		   :meta (random-word-list 10)
-		   :featured (flip)
-		   :published (flip))))
+    (let* ((published (flip))
+	   (featured (if published (flip) nil)))
+      (format t "Provisioning item ~A~%" (+ i 1))
+      (make-instance 'line-item
+		     :title (random-words 3)
+		     :short-description (random-words 10)
+		     :long-description (random-words 40)
+		     :weight (random 2000)
+		     :price (random 1000)
+		     :meta (random-word-list 10)
+		     :featured featured
+		     :published published))))
+
 
 ;; (defun export-items-test (filename)
 ;;   (with-open-file (f filename :direction :output :if-exists :supersede)

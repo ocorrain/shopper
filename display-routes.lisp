@@ -3,8 +3,14 @@
 (restas:define-route r/index-page
     ("/")
   (make-page (format nil "Welcome to ~A" (store-name *web-store*))
-	     (thumbnails (all-items)
-			 #'render-thumb)
+	     (with-html-output-to-string (s)
+	       (:h2 "Featured categories")
+	       (str (thumbnails (featured-tags)
+				#'render-thumb))
+	       (:h2 "Featured items")
+	       (str (thumbnails (remove-if-not #'featured (all-items))
+				#'render-thumb)))
+	     
 	     (main-site-bar "")))
 
 (restas:define-route r/view-tag
@@ -38,9 +44,27 @@
 
 (restas:define-route r/shopping-cart/checkout
     ("/checkout")
-  (make-page "Enter address details"
-	     (customer-address-content)
-	     (main-site-bar "")))
+  (if-let (cart (get-cart))
+    (let ((order (cart->order cart)))
+      (if (paypal-api-call-setexpresscheckout order)
+	  (hunchentoot:redirect (paypal-redirect-url order))
+	  (error "We failed")))))
+
+(restas:define-route r/shopping-cart/success
+    ("/success")
+  (if-let (order (get-order-by-gateway-ref (hunchentoot:get-parameter "token")))
+    ;; call to getexpresscheckoutdetails goes here
+    (make-page "Confirm your purchase"
+	       (concatenate 'string
+			    (print-shopping-cart (cart order))
+			    (with-html-output-to-string (s)
+			      ((:a :class "btn btn-large btn-primary"
+				 :href (confirmation-url order))
+			     "Confirm & buy")
+			      ((:a :class "btn btn-large btn-warning"
+				   :href (cancellation-url order))
+			       "Cancel order"))))))
+
 
 (restas:define-route r/shopping-cart/checkout/post
     ("/checkout" :method :post)

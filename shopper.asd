@@ -34,5 +34,7 @@
 	       (:file "cart")
 	       (:file "customer")
 	       (:file "display")
-	       (:file "pages")))
+	       (:file "pages")
+	       (:file "order")
+	       (:file "paypal")))
 

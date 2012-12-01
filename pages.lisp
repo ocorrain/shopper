@@ -54,8 +54,12 @@
   (with-html-output-to-string (s)
     ((:a :href (get-view-url obj))
      (when (images obj)
-       (htm (str (display-an-image obj))))
-     (:h5 (str (title obj))))
+       (htm (str (display-an-image obj)))))
+
+    (when (not edit)
+      (htm (str (cart-widget obj))))
+
+    ((:a :href (get-view-url obj)) (:h5 (str (title obj))))
     
     (when edit
       (htm (:p (when (published obj)
@@ -64,22 +68,25 @@
 			(htm ((:span :class "label label-success") "Featured"))))))))
     
     
-    (:p (str (short-description obj)))
-    
+    (:p (str (short-description obj))
+	(:br)
+	(:em "Price: ")
+	(str (print-price (get-price obj))))
+
     (when edit
       (htm ((:a :class "btn btn-mini" :href (get-edit-edit-url obj))
 	    "Edit")
 	   ((:a :class "btn btn-mini btn-danger pull-right" :href (get-delete-url obj))
 	    "Delete")))
 
-    (when (not edit)
-      (htm (str (cart-widget obj))))))
+))
 
 (defmethod render-thumb ((obj tag) &optional edit)
   (with-html-output-to-string (s)
-    (htm (str (display-an-image obj)))
-    (:h5 (str (tag-name obj)))
-
+    ((:a :href (get-view-url obj))
+     (htm (str (display-an-image obj)))
+     (:h5 (str (tag-name obj))))
+ 
     (when edit
       (htm (:p (when (appears-in-menu obj)
 	    (htm ((:span :class "label") "Menu")
