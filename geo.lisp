@@ -70,24 +70,6 @@ in that geo"
 
 
 
-;; 	Ireland and NI		UK		Europe		Rest	
-;; 	Standard	Courier	Standard	Courier	Standard	Courier	Standard	Courier
-								
-;; (defparameter *postage*
-;;   '((100	2.4	nil	3	nil	3	nil	3	nil)
-;;     (250	3	nil	4	nil	4	nil	4	nil)
-;;     (500	4	nil	5	nil	5	nil	5	nil)
-;;     (1000	6.5	nil	7.5	nil	7.5	nil	10.75	nil)
-;;     (1500	7.5	nil	10.75	nil	10.75	nil	17	nil)
-;;     (2000	7.5	nil	10.75	nil	10.75	nil	17	nil)
-;;     (2500	9	nil	nil	nil	36	nil	36	nil)
-;;     (3000	10	nil	nil	nil	40	nil	40	nil)
-;;     (3500	11.5	nil	nil	nil	46	nil	46	nil)
-;;     (4000	12.5	nil	nil	nil	50	nil	50	nil)
-;;     (4500	13.5	nil	nil	nil	55.5	nil	55	nil)
-;;     (5000	14.5	12	nil	21.96	60	nil	60	nil)
-;;     (15000	nil	14.96	nil	24.96	nil	33	nil	45 )
-;;     (30000	nil	19.95	nil	29.95	nil	nil	nil	nil))) 
 
 (defun tidy-country (string)
   (string-trim '(#\Space #\Tab)
@@ -467,3 +449,40 @@ in that geo"
 
 (defun item-available-in? (item geo)
   (member geo (geographies item)))
+
+;; 	Ireland and NI		UK		Europe		Rest	
+;; 	Standard	Courier	Standard	Courier	Standard	Courier	Standard	Courier
+								
+;;  (defparameter *postage*
+;;    '((100	2.4	nil	3	nil	3	nil	3	nil)
+;;      (250	3	nil	4	nil	4	nil	4	nil)
+;;      (500	4	nil	5	nil	5	nil	5	nil)
+;;      (1000	6.5	nil	7.5	nil	7.5	nil	10.75	nil)
+;;      (1500	7.5	nil	10.75	nil	10.75	nil	17	nil)
+;;      (2000	7.5	nil	10.75	nil	10.75	nil	17	nil)
+;;      (2500	9	nil	nil	nil	36	nil	36	nil)
+;;      (3000	10	nil	nil	nil	40	nil	40	nil)
+;;      (3500	11.5	nil	nil	nil	46	nil	46	nil)
+;;      (4000	12.5	nil	nil	nil	50	nil	50	nil)
+;;      (4500	13.5	nil	nil	nil	55.5	nil	55	nil)
+;;      (5000	14.5	12	nil	21.96	60	nil	60	nil)
+;;      (15000	nil	14.96	nil	24.96	nil	33	nil	45 )
+;;      (30000	nil	19.95	nil	29.95	nil	nil	nil	nil))) 
+
+;; (defun define-postage (n)
+;;   (mapcar (lambda (entry)
+;; 	    (cons (car entry) (elt entry n)))
+;; 	  *postage*))
+
+;; (defun define-provider (name n)
+;;   (let ((provider (make-instance 'provider :name name)))
+;;     (add-postage-rates provider (define-postage n))
+;;     provider))
+
+;; (defun add-postage-rates (provider rates)
+;;   (dolist (r rates)
+;;     (when (cdr r)
+;;       (add-postage (car r)
+;; 		   (round (* (cdr r) 100))
+;; 		   provider))))
+
