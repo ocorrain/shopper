@@ -9,7 +9,7 @@
    (postcode :initarg :postcode :initform nil :accessor postcode)
    (region :initarg :region :initform nil :accessor region)
    (country :initarg :country :initform nil :accessor country)
-   (orders :initform (ele:make-pset) :accessor orders)
+   (orders :initform nil :accessor orders)
    (created :initform (get-universal-time) :accessor created)))
 
 (defun get-customer ()
@@ -111,7 +111,7 @@
        ((:a :href "/shopping-cart" :class "pull-left btn btn-large btn-primary")
 	"<< Change order")
        ((:button :type "submit" :class "pull-right btn btn-large btn-success")
-	"Place order >>")))))
+	"Confirm and place order >>")))))
 
 (defun get-or-initialize-customer ()
   (if-let (customer (hunchentoot:session-value :customer))
@@ -140,9 +140,9 @@
       (when-let (region (validate-as-string (pp "region")))
 	(setf (region customer) region))
       (when-let (country (validate-as-string (pp "country")))
-	(if (find country *w3-countries* :key #'car :test #'equal)
-	    (setf (country customer) country)
-	    (push (cons 'country "Invalid country") errors))))
+	(if-let (country-info (get-country-info-from-iso-code country))
+	  (setf (country customer) (car country-info))
+	  (push (cons 'country "Invalid country") errors))))
     (values customer errors)))
 
 (defmethod is-valid-customer? ((customer customer))
@@ -159,12 +159,10 @@
     require is the first lineof the address, a confirmed email adress,
     one of city or region/province/state, and a valid contry")))))
 
-(defmethod display-customer ((customer customer))
+(defmethod display-customer-address ((customer customer))
   (with-html-output-to-string (s)
     (:address (:strong (str (name customer))) (:br)
-	      (str (email customer)))
-
-    (:address (str (address1 customer)) (:br)
+	      (str (address1 customer)) (:br)
 	      (when-let (address2 (address2 customer))
 		(htm (str address2) (:br)))
 	      
@@ -177,4 +175,5 @@
 	      (when-let (postcode (postcode customer))
 		(htm (str postcode) (:br)))
 	      
-	      (:strong (str (country customer))))))
+	      (:strong (str (get-country-name-from-iso-code
+			     (country customer)))))))

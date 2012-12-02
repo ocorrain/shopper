@@ -36,5 +36,6 @@
 	       (:file "display")
 	       (:file "pages")
 	       (:file "order")
+	       (:file "geo")
 	       (:file "paypal")))
 

@@ -146,8 +146,9 @@
     ("/edit/item/:(sku)/edit" :method :post)
   (if-let (item (get-item sku))
     (progn
-       (maybe-update item (fix-alist (hunchentoot:post-parameters*)))
-       (edit-item-edit-page item))
+      (update-geos item (hunchentoot:post-parameters*))
+      (maybe-update item (fix-alist (hunchentoot:post-parameters*)))
+      (edit-item-edit-page item))
     hunchentoot:+http-not-found+))
 
 (defun get-image-number-as-string (image)

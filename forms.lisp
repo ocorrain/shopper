@@ -8,7 +8,7 @@
     ((:form :action (if line-item (format nil (get-edit-edit-url line-item) (sku line-item))
 			"/new/item")
 	    :method :post)
-      (textfield "title" s "Name" "Name or title of this item" (when line-item (title line-item)))
+     (textfield "title" s "Name" "Name or title of this item" (when line-item (title line-item)))
      (textfield "short-description" s "Short description" "A one-line description of the item"
 		(when line-item (short-description line-item)))
      (textarea "long-description" s "Full description"
@@ -40,6 +40,15 @@
 		    "The price of the item in euro cents")
 
 		(when line-item (price line-item)))
+
+     (:p "Enter the postal regions in which this item is available")
+     (dolist (geo (all-geographies))
+       (checkbox (format nil "G_~A" (hunchentoot:url-encode (geo-name geo)))
+		 s
+		 (geo-name geo)
+		 (when line-item
+		   (member geo (geographies line-item))))
+       (htm (:br)))
      
      (submit-button "Submit" s))))
 
@@ -206,11 +215,12 @@ this will be used as a blurb when viewing this tag"
 (defun country-selector (name &optional selected)
   (with-html-output-to-string (s)
     ((:select :class "input" :name name)
-     (dolist (country *w3-countries*)
-       (let ((this (car country)))
-	 (if (equal this selected)
-	     (htm ((:option :value (car country) :selected "selected")
-		   (str (cdr country))))
-	     (htm ((:option :value (car country))
-		   (str (cdr country))))))))))
+     (dolist (cinfo (all-countries-info))
+       (destructuring-bind (code . country) cinfo
+	 (if (equal code selected)
+	     (htm ((:option :value code :selected "selected")
+		   (str country)))
+	     (htm ((:option :value code)
+		   (str country)))))))))
+
 

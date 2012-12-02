@@ -71,7 +71,8 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 					 :name (pathname-name i) :type (pathname-type i)
 					 :defaults (image-path *web-store*)))
 			      (thumb-path (get-thumb-path dest-path))
-			      (full-size-path (get-full-size-path dest-path)))
+			      (full-size-path (get-full-size-path dest-path))
+			      (small-size-path (get-small-size-path dest-path)))
 			 (format t "Making ~A~%" thumb-path)
 			 (create-thumbnail dest-path thumb-path
 					   (get-config-option :thumbnail-width)
@@ -79,7 +80,11 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 			 (format t "Making ~A~%" full-size-path)
 			 (create-thumbnail dest-path full-size-path
 					   (get-config-option :display-width)
-					   (get-config-option :display-height))))))
+					   (get-config-option :display-height))
+			 (format t "Making ~A~%" small-size-path)
+			 (create-thumbnail dest-path small-size-path
+					   (get-config-option :small-width)
+					   (get-config-option :small-height))))))
 		 (items *web-store*)))
 
 (defun image-thumbnails (list render-func)

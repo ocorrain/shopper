@@ -51,6 +51,8 @@
    (image-counter :initform 0 :accessor image-counter
 		  :documentation "counter for image filenames"
 		  :type number)
+   (geographies :initform nil :accessor geographies
+		:documentation "geographies in which this item is available")
    ;; (children :initform '() :accessor get-children
    ;; 	     :documentation "children of this object.  Objects may not
    ;; 	     contain any reference to themselves")

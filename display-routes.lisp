@@ -27,6 +27,12 @@
 		((:div :class "container")
 		 (str (shopping-cart-form (get-or-initialize-cart)))))))
 
+(restas:define-route r/enter-details ("/enter-details")
+    (basic-page "Enter customer details"
+		(with-html-output-to-string (s)
+		  ((:div :class "container")
+		   (:h2 "Enter shipping details")
+		   (str (customer-address-form))))))
 
 (restas:define-route r/shopping-cart/view/post
     ("/shopping-cart" :method :post)
@@ -42,28 +48,43 @@
     (destructuring-bind (item . quantity) item-q
       (set-item-quantity item cart quantity))))
 
-(restas:define-route r/shopping-cart/checkout
-    ("/checkout")
-  (if-let (cart (get-cart))
-    (let ((order (cart->order cart)))
-      (if (paypal-api-call-setexpresscheckout order)
-	  (hunchentoot:redirect (paypal-redirect-url order))
-	  (error "We failed")))))
+
+(restas:define-route r/shopping-cart/checkout/post
+    ("/checkout" :method :post)
+  (if-let ((cart (get-cart))
+	   (postage (hunchentoot:post-parameter "postage"))
+	   (customer (get-customer)))
+    (if-let (geo (get-geo-from-country-code (country customer)))
+      (let ((rates (get-applicable-postage-rates (get-weight cart) geo)))
+	(if-let (this-rate (assoc postage rates :test #'string-equal))
+	  (let ((order (cart->order cart)))
+	    (setf (postage-price order) (cdr this-rate))
+	    (if (paypal-api-call-setexpresscheckout order)
+	      (hunchentoot:redirect (paypal-redirect-url order))
+	      (error "We failed"))))))))
 
 (restas:define-route r/shopping-cart/success
     ("/success")
   (if-let (order (get-order-by-gateway-ref (hunchentoot:get-parameter "token")))
-    ;; call to getexpresscheckoutdetails goes here
-    (make-page "Confirm your purchase"
-	       (concatenate 'string
-			    (print-shopping-cart (cart order))
-			    (with-html-output-to-string (s)
-			      ((:a :class "btn btn-large btn-primary"
+    (progn
+      (if (paypal-api-call-getexpresscheckoutdetails order)
+	  (basic-page "Confirm your purchase"
+		      (with-html-output-to-string (s)
+			((:div :class "container")
+			 (str (shopping-cart-display
+			       (cart order)
+			       (with-html-output-to-string (s)
+				 (:h3 "Confirm order")
+				 (:p "If you wish to make this
+				 purchase, please click Confirm &
+				 Buy on this page."))))
+			 ((:a :class "btn btn-large btn-warning pull-left"
+			      :href (cancellation-url order))
+			  "Cancel order")
+			 ((:a :class "btn btn-large btn-primary pull-right"
 				 :href (confirmation-url order))
-			     "Confirm & buy")
-			      ((:a :class "btn btn-large btn-warning"
-				   :href (cancellation-url order))
-			       "Cancel order"))))))
+			     "Confirm & buy"))))))))
+
 
 
 (restas:define-route r/shopping-cart/checkout/post
@@ -74,31 +95,113 @@
 
 (restas:define-route r/shopping-cart/place-order
     ("/place-order" :method :post)
+  (order-edit-details-page))
+
+(defun order-edit-details-page ()
   (multiple-value-bind (customer errors)
       (maybe-create/update-customer)
     (multiple-value-bind (valid verrors)
 	(is-valid-customer? customer)
       (if valid
-	  (make-page "Finalize order"
-		     (validate-or-cancel-order)
-		     (main-site-bar ""))
-	  (make-page "Re-enter address details"
-		     (customer-address-content (append errors (list verrors)))
-		     (main-site-bar ""))))))
+	  (basic-finalize-page)
+	  (basic-edit-address-page (append errors (list verrors)))))))
+
+(defun basic-finalize-page ()
+  (let ((cart (get-cart))
+	(customer (get-customer)))
+    (multiple-value-bind (valid invalid)
+	(check-order cart customer)
+      (setf (items cart) valid)
+      (basic-page "Finalize order"
+		  (with-html-output-to-string (s)
+		    ((:div :class "container")
+		     
+		      
+		     ((:div :class "row")
+		      
+		      ((:div :class "span4")
+		       (:h4 "Shipping address")
+		       (:address (str (email customer))) (:br)
+		       ((:a :href "/enter-details" :class "btn btn-primary btn-small pull-left")
+			"Change address"))
+		     
+		      ((:div :class "span4")
+		       (str (display-customer-address customer))))
+
+		     (:hr)
+		     ((:div :class "row")
+		      (:h4 "Order contents")
+		      (when invalid
+			(htm ((:div :class "alert alert-error")
+			      (:p "The following items are not
+			      available in your geographical area.
+			      They have been removed from your
+			      shopping cart")
+			      (:ul
+			       (dolist (inv invalid)
+				 (htm (:li (str (title (qlist-entry-item inv)))))))))))
+		     (dolist (i (items cart))
+		       (destructuring-bind (item quantity) i
+			 (htm ((:div :class "row")
+			       ((:div :class "span2")
+				(str (display-a-small-image item)))
+			       ((:div :class "span8")
+				(:h5 (str (title item)))
+				(:p (str (short-description item)))
+				(:p (:em "Item price: ") (str (print-price (get-price item)))))
+			       ((:div :class "span2")
+				(:p (str quantity)))))))
+		     ((:div :class "row")
+		      ((:div :class "span2 offset6")
+		       (:p (:strong "Subtotal: ")
+			   (str (print-price (get-price cart))))))
+		     ((:div :class "row")
+		      ((:a :href "/shopping-cart" :class "btn btn-primary pull-left")
+		       "Change shopping cart")
+		      (:hr)
+		      (when valid
+			(htm
+			 ((:div :class "row")
+			  ((:div :class "span8")
+			   (:h4 "Shipping method")))
+			 ((:form :action "/checkout" :method :post)
+			  (let* ((rates (sort (get-applicable-postage-rates
+						(get-weight cart)
+						(get-geo-from-country-code (country customer)))
+					       #'< :key #'cdr))
+				  (cheapest (car rates)))
+			     (dolist (rate rates)
+			       (htm
+				((:div :class "row")
+				 ((:div :class "span6 offset2")
+				  (:h5 (str (car rate)))
+				  (:p (:strong "Shipping cost: ")
+				      (str (print-price (cdr rate)))))
+				 ((:div :class "span2")
+				  (:p (:strong "TOTAL: ")
+				      (str (print-price (+ (get-price cart)
+							   (cdr rate))))))
+				 ((:div :class "span2")
+				  (if (equalp rate cheapest)
+				      (htm (:input :type "radio" :name "postage" :id "true"
+						   :value (car rate) :checked "checked"))
+				      (htm (:input :type "radio" :name "postage" :id "true"
+						   :value (car rate))))))
+				 )))
+			   ((:div :class "row")
+			    ((:button :type "submit"
+				      :class "btn btn-large btn-success pull-right")
+			    "PLACE ORDER"))))))))))))
+
+(defun basic-edit-address-page (&optional errors)
+  (basic-page "Re-enter address details"
+	      (with-html-output-to-string (s)
+		((:div :class "container")
+		 (str (customer-address-content errors))))))
 
 (restas:define-route r/shopping-cart/place-order/get
     ("/place-order")
-  (multiple-value-bind (customer errors)
-      (maybe-create/update-customer)
-    (multiple-value-bind (valid verrors)
-	(is-valid-customer? customer)
-      (if valid
-	  (make-page "Finalize order"
-		     (validate-or-cancel-order)
-		     (main-site-bar ""))
-	  (make-page "Re-enter address details"
-		     (customer-address-content (append errors (list verrors)))
-		     (main-site-bar ""))))))
+  (order-edit-details-page))
 
 (defun validate-or-cancel-order ()
   (let ((cart (get-or-initialize-cart))

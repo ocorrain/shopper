@@ -134,6 +134,9 @@
       (setf (featured line-item) t)
       (setf (featured line-item) nil)))) 
 
+(defun set-geographies (line-item)
+  )
+
 (defmethod validate ((type (eql 'single-item)) parameters)
   (multiple-value-bind (valid-generic errors-generic)
       (validate-generic-line-item-fields parameters)

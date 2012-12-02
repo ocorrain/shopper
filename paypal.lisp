@@ -5,13 +5,13 @@
 (defparameter *paypal-redirect-url* "https://www.sandbox.paypal.com/webscr")
 
 (defun get-paypal-api-username ()
-  "seller_1349351529_biz_api1.gmail.com")
+  "uks_1354475765_biz_api1.gmail.com")
 
 (defun get-paypal-api-password ()
-  "1349351552")
+  "1354475788")
 
 (defun get-paypal-api-signature ()
-  "AzJcbnZYSJ.hSfYEbLCkeJlOT9oRA7u1N0vNpi46myZ9Vs6wzDAcujEJ	")
+  "An5ns1Kso7MWUdW4ErQKJJJ4qi4-A5tv818mwyzg6zbIv0gKNBCpssNq")
 
 
 (defun get-return-url ()
@@ -56,17 +56,34 @@
 
 (defmethod paypal-payment-fields ((order order) &optional (order-number 0))
   (list (cons "PAYMENTREQUEST_0_AMT"
-	      (paypal-amt (+ (get-shipping-costs order) (get-price (cart order)))))
+	      (paypal-amt (+ (postage-price order) (get-price (cart order)))))
 	(cons "PAYMENTREQUEST_0_CURRENCYCODE" "EUR")
 	(cons "PAYMENTREQUEST_0_PAYMENTACTION" "Sale")
-	(cons "PAYMENTREQUEST_0_INVNUM" (order-number *order*))
+	(cons "PAYMENTREQUEST_0_INVNUM" (order-number order))
 	(cons "PAYMENTREQUEST_0_ITEMAMT" (paypal-amt (get-price (cart order))))
-	(cons "PAYMENTREQUEST_0_SHIPPINGAMT" (paypal-amt (get-shipping-costs order)))))
+	(cons "PAYMENTREQUEST_0_SHIPPINGAMT" (paypal-amt (postage-price order)))))
+
+(defmethod customer-paypal-fields ((order order) &optional (order-number 0))
+  (with-slots (customer) order
+    (let ((customer-alist
+	   (list (cons "PAYMENTREQUEST_0_SHIPTONAME" (name customer))
+		 (cons "PAYMENTREQUEST_0_SHIPTOSTREET" (address1 customer))
+		 (cons "PAYMENTREQUEST_0_SHIPTOCITY" (address2 customer))
+		 (cons "PAYMENTREQUEST_0_SHIPTOSTATE" (region customer))
+		 (cons "PAYMENTREQUEST_0_SHIPTOCOUNTRYCODE" (country customer))
+		 (cons "ADDROVERRIDE" "1"))))
+      (when (address2 customer)
+	(push (cons "PAYMENTREQUEST_0_SHIPTOSTREET2" (address2 customer)) customer-alist))
+      (when (postcode customer)
+	(push (cons "PAYMENTREQUEST_0_SHIPTOZIP" (address2 customer)) customer-alist))
+      customer-alist)))
+
 
 (defmethod paypal-setexpresscheckout-parameters ((order order) &optional (order-number 0))
   (append (standard-paypal-fields order "SetExpressCheckout" order-number)
 	  (paypal-payment-fields order order-number)
-	  (paypal-item-manifest order order-number)))
+	  (paypal-item-manifest order order-number)
+	  (customer-paypal-fields order order-number)))
 
 (defmethod paypal-getexpresscheckoutdetail-parameters ((order order) &optional (order-number 0))
   (acons "TOKEN" (gateway-ref order)
@@ -88,7 +105,6 @@
 	   (if (numberp response)
 	       (error "HTTP call to paypal failed, HTTP return code: ~D" response)
 	       (error "Call to paypal API failed"))))))
-
 
 (defmethod paypal-api-call-setexpresscheckout ((order order) &optional (order-number 0))
   (with-paypal-context (paypal-setexpresscheckout-parameters order order-number)
@@ -137,6 +153,6 @@
   (cdr (assoc key decoded-response :test #'equal)))
 
 
-(defparameter *pp-response* "TOKEN=EC%2d39R81963KT576233T&TIMESTAMP=2012%2d12%2d01T14%3a04%3a32Z&CORRELATIONID=324a7664170e9&ACK=Success&VERSION=94%2e0&BUILD=4181146")
+;; (defparameter *pp-response* "TOKEN=EC%2d39R81963KT576233T&TIMESTAMP=2012%2d12%2d01T14%3a04%3a32Z&CORRELATIONID=324a7664170e9&ACK=Success&VERSION=94%2e0&BUILD=4181146")
 
-(defparameter *pp-payer-id* "E7CPQ7VYE4QW4")
+;; (defparameter *pp-payer-id* "E7CPQ7VYE4QW4")

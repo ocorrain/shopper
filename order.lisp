@@ -22,6 +22,7 @@
 		:index t)
    (correlation-id :accessor correlation-id :initform nil :index t)
    (payer-id :accessor payer-id :initform nil)
+   (order-postage-price :accessor postage-price :initform 0)
    (order-price :initarg :order-price :initform 0 :accessor order-price)))
 
 (defmethod add-order-timestamp (order timestamp-id)
@@ -65,19 +66,35 @@
     (progn
       (setf (hunchentoot:session-value :cart) (cart order))
       (ele:drop-instance order)
-      (make-page "Order cancelled"
-		 (with-html-output-to-string (s)
-		   (:h2 "Your order has been cancelled")
-		   (:p "Items from your order have been returned to your shopping cart"))))))
+      (order-cancelled-page))))
+
 
 (restas:define-route order/cancel/paypal
     ("/cancel")
   (if-let (token (hunchentoot:get-parameter "token"))
     (if-let (order (get-order-by-gateway-ref token))
       (progn
-	(setf (hunchentoot:session-value :cart) (car order))
+	(setf (hunchentoot:session-value :cart) (cart order))
 	(ele:drop-instance order)
-	(make-page "Order cancelled"
-		   (with-html-output-to-string (s)
-		     (:h2 "Your order has been cancelled")
-		     (:p "Items from your order have been returned to your shopping cart")))))))
+	(order-cancelled-page)))))
+
+(defun order-cancelled-page ()
+  (basic-page "Order cancelled"
+	      (with-html-output-to-string (s)
+		((:div :class "container")
+		 (:h2 "Your order has been cancelled")
+		 (:p "Items from your order have been returned to your shopping cart")
+		 (:hr)
+		 (str (shopping-cart-form (hunchentoot:session-value :cart)))))))
+
+(defun check-order (cart customer)
+  (if-let (geo (get-geo-from-country-code (country customer)))
+    (let ((valid '())
+	  (invalid '()))
+      (dolist (i (items cart))
+	(if (item-available-in?
+	     (qlist-entry-item i)
+	     geo)
+	    (push i valid)
+	    (push i invalid)))
+      (values valid invalid))))

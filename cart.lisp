@@ -109,6 +109,34 @@
 					 )))))))))))
 
 
+(defun shopping-cart-display (cart text)
+  (with-html-output-to-string (s)
+    ((:div :class "row")
+     ((:div :class "span7")
+      (str text))
+     ((:div :class "span5")
+      ((:div :class "well well-small")
+       ((:dl :class "dl-horizontal")
+	(:dt "Total price")
+	(:dd (str (print-price (get-price cart))))
+	(:dt "Weight")
+	(:dd (fmt "~Ag" (get-weight cart)))))))
+
+    (:hr)
+
+    (dolist (i (items cart))
+      (destructuring-bind (item quantity) i
+	(htm ((:div :class "row")
+	      ((:div :class "span2")
+	       (str (display-a-small-image item)))
+	      ((:div :class "span8")
+	       (:h5 (str (title item)))
+	       (:p (str (short-description item)))
+	       (:p (:em "Item price: ") (str (print-price (get-price item)))))
+	      ((:div :class "span2")
+	       (:p (str quantity)))))))))
+
+
 (defun shopping-cart-form (cart)
   (with-html-output-to-string (s)
     ((:div :class "row")
@@ -127,11 +155,12 @@
     
     ((:form :class "form-horizontal" :action "/shopping-cart" :method :post)
      ((:div :class "row")
-      ((:button :type "submit" :class "btn btn-large pull-left") "Update")
-      ((:a :href "/checkout" :class "pull-right btn btn-large btn-primary")
-       "Check out")
-      ((:a :href "/" :class "pull-right btn btn-large btn-success")
-       "Continue shopping"))
+      ((:a :href "/" :class "pull-left btn btn-large btn-success")
+       "<< Continue shopping")
+      ((:a :href "/enter-details" :class "pull-right btn btn-large btn-primary")
+       "Enter details & check out>>")
+      ((:button :type "submit" :class "btn btn-large pull-right") "Update totals"))
+     
 
      (:hr)
 
@@ -150,25 +179,12 @@
      
      (:hr)
      ((:div :class "row")
-      ((:button :type "submit" :class "btn btn-large pull-left") "Update")
-      ((:a :href "/checkout" :class "pull-right btn btn-large btn-primary")
-       "Check out")
-      ((:a :href "/" :class "pull-right btn btn-large btn-success")
-       "Continue shopping")))
-    
-    
+      ((:a :href "/" :class "pull-left btn btn-large btn-success")
+       "Continue shopping")
+      ((:a :href "/enter-details" :class "pull-right btn btn-large btn-primary")
+       "Enter details & check out>>")
+      ((:button :type "submit" :class "btn btn-large pull-right") "Update totals")))))
 
-    ;; (dolist (i (items cart)))
-    ;; ((:div :class "row")
-    ;;  ((:div :class "span5")
-      
-      
-    ;;   ((:a :href "/checkout" :class "pull-right btn btn-large btn-primary")
-    ;; 	"Continue >>"))
-    ;;  ((:div :class "span5")
-    ;;   ((:div :class "well")
-    ;;    (str (print-shopping-cart cart)))))
-    ))
 
 (defun all-carts ()
   (ele:get-instances-by-class 'shopping-cart))
@@ -179,5 +195,6 @@
 		 :order-timestamps (list (cons :order-generated (get-universal-time)))
 		 :cart cart
 		 :reified-cart (reify cart)
+		 :customer (get-customer)
 		 :order-price (get-price cart)))
 
