@@ -82,7 +82,7 @@
     ("/admin/orders")
   (make-page "Manage orders"
 	     (order-manage-page)
-	     (edit-bar "Orders")))lo
+	     (edit-bar "Orders")))
 
 (defun order-manage-page ()
   (let ((orders (ele:get-instances-by-class 'order)))
