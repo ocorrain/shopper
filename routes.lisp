@@ -15,12 +15,9 @@
     (restas.directory-publisher:*baseurl* '("s"))
     (restas.directory-publisher:*directory* (get-twitter-bootstrap-path))
     (restas.directory-publisher:*autoindex* nil))
+  (restas:mount-submodule admin-interface (#:shopper-edit)
+    (shopper-edit:*baseurl* '("edit")))
   (restas:reconnect-all-routes))
-
-
-
-
-
 
 (defun maybe-update-bundle (bundle)
   (dolist (item-q (get-valid-objects-from-post (hunchentoot:post-parameters*)))

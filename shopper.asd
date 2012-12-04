@@ -19,7 +19,7 @@
   :components ((:file "shopper")
 	       (:file "display-routes")
 	       (:file "edit-routes")
-	       (:file "tag-routes")
+;	       (:file "tag-routes")
 	       (:file "cart-routes")
 	       (:file "js")
 	       (:file "widgets")

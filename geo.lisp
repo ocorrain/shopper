@@ -11,6 +11,12 @@
 (ele:defpclass provider (quantity-list)
   ((provider-name :initarg :name :accessor provider-name :index t)))
 
+(defun provider-entry-weight (provider-entry)
+  (qlist-entry-quantity provider-entry))
+
+(defun provider-entry-price (provider-entry)
+  (qlist-entry-item provider-entry))
+
 (defmethod add-postage (weight-limit price (provider provider))
   (add-item price provider weight-limit))
 
@@ -79,6 +85,9 @@ in that geo"
   (find-if (lambda (geo)
 	     (country-in? code geo))
 	   (all-geographies)))
+
+(defun get-country-name-from-iso-code (iso-code)
+  (cdr (get-country-info-from-iso-code iso-code)))
 
 (defun get-country-info-from-iso-code (iso-code)
   "Returns alist (code . name)"
@@ -333,86 +342,131 @@ in that geo"
     ("ZM"  "ZAMBIA                                      " "ZMB"     894)
     ("ZW"  "ZIMBABWE                                    " "ZWE"     716)))
 
-(restas:define-route geo/new
-    ("/new/geo")
-  (make-page "Create a new geography" (geo-form) (edit-bar "New geography")))
 
-(restas:define-route geo/new/post
-    ("/new/geo" :method :post)
-  (when-let (name (hunchentoot:post-parameter "title"))
-    (if-let (already-existing (ele:get-instance-by-value 'geography
-							  'geography-name
-							  name))
-	     (hunchentoot:redirect (get-geo-edit-url already-existing))
-	     (let ((new-geo (make-instance 'geography :name name)))
-	       (setf (geo-members new-geo)
-		     (remove-if-not (lambda (p)
-				      (get-country-info-from-iso-code p))
-				    (mapcar #'car (hunchentoot:post-parameters*))))
-	       (hunchentoot:redirect (get-geo-edit-url new-geo))))))
 
-(restas:define-route geo/delete
-    ("/geo/delete/:(geoid)")
+
+(defun geo-form-page (geoid &optional parameters)
   (when-let (geo (ele:get-instance-by-value 'geography
 					    'geography-name
 					    (hunchentoot:url-decode geoid)))
-    (ele:drop-instance geo)
-    (hunchentoot:redirect "/edit/geos")))
+    (when parameters
+      (setf (geo-members geo)
+	    (remove-if-not (lambda (p)
+			     (get-country-info-from-iso-code p))
+			   (mapcar #'car parameters))))
+    (make-page (format nil "Editing geography: ~A" (geo-name geo))
+	       (concatenate 'string
+			    (edit-tabs geo "Countries")
+			    (geo-form geo))
+	       (edit-bar "All geographies"))))
 
-(restas:define-route geos/edit
-    ("/edit/geos")
-  (make-page "All geographies"
+(defun geo-postage-page (geoid &optional parameters)
+  (when-let (geo (ele:get-instance-by-value 'geography
+					    'geography-name
+					    (hunchentoot:url-decode geoid)))
+    (flet ((postage-rows (provider-name rates)
 	     (with-html-output-to-string (s)
-	       (:h1 "All geographies")
-	       (dolist (g (all-geographies))
-		 (htm
-		  (:h3 (str (geo-name g)))
-		  (:p (if-let (members (geo-members g))
-			(fmt "~{~A~^, ~}."
-			     (sort (mapcar (compose #'cdr
-					      #'get-country-info-from-iso-code)
-				     members)
-				   #'string<))
-			(str "No member countries")))
-		  (:p ((:a :class "btn btn-small btn-primary pull-left"
-			   :href (get-geo-edit-url g))
-		       "Edit")
-		      ((:a :class "btn btn-small btn-danger pull-right"
-			   :href (get-geo-delete-url g))
-		       "Delete"))
-		  (:hr))))
-	     (edit-bar "All geographies")))
+	       (dolist (rate rates)
+		 (htm (:tr (:td (str (provider-entry-weight rate)))
+			   (:td (str
+				 (print-price (provider-entry-price rate))))
+			   (:td ((:a :href (add-get-parameters-to-url
+					    (restas:genurl
+					     'shopper-edit:geo/edit/postage
+					     :geoid geoid)
+					    (acons "delete" (provider-entry-weight rate)
+						   (acons "provider" provider-name nil))) 
+				     :class "btn btn-small btn-danger")
+				 "X")))))))
+	   (get-parameter (p) (cdr (assoc p parameters :test #'string-equal)))
+	   (get-integer (str) (ignore-errors (parse-integer str :junk-allowed t))))
+      (when-let* ((provider-name (get-parameter "provider"))
+		  (provider-object (find provider-name (geo-providers geo)
+					 :key #'provider-name :test #'string-equal)))
+	(when-let* ((provider-delete (get-parameter "delete"))
+		    (delete-number (get-integer provider-delete)))
+	  (setf (items provider-object)
+		(remove delete-number (items provider-object)
+			:key #'provider-entry-weight)))
+	(when-let* ((provider-weight (get-parameter "weight"))
+		    (provider-price (get-parameter "price"))
+		    (weight (get-integer provider-weight))
+		    (price (get-integer provider-price)))
+	  (setf (items provider-object)
+		(cons (list price weight)
+		      (remove weight (items provider-object)
+			      :key #'provider-entry-weight)))
+	  (set-item-quantity price provider-object weight)))
 
-(restas:define-route geo/edit
-    ("/edit/geo/:(geoid)")
-  (when-let (geo (ele:get-instance-by-value 'geography
-					    'geography-name
-					    (hunchentoot:url-decode geoid)))
-    (geo-form-page geo)))
+      (when-let ((new-provider (get-parameter "newprovider")))
+	(unless (find new-provider (geo-providers geo)
+		      :key #'provider-name :test #'string-equal)
+	  (push (make-instance 'provider :name new-provider) (geo-providers geo))))
 
-(restas:define-route geo/edit/post
-    ("/edit/geo/:(geoid)" :method :post)
-  (when-let (geo (ele:get-instance-by-value 'geography
-					    'geography-name
-					    (hunchentoot:url-decode geoid)))
-    (setf (geo-members geo)
-	  (remove-if-not (lambda (p)
-			   (get-country-info-from-iso-code p))
-			 (mapcar #'car (hunchentoot:post-parameters*))))
-    (geo-form-page geo)))
+      (when-let ((delete-provider (get-parameter "deleteprovider")))
+	(setf (geo-providers geo) (remove delete-provider (geo-providers geo)
+					  :key #'provider-name :test #'string-equal)))
+
+      (make-page (format nil "Editing geography: ~A" (geo-name geo))
+		 (concatenate 'string
+			      (edit-tabs geo "Postage rates")
+			      (with-html-output-to-string (s)
+				((:form :action (restas:genurl
+						 'shopper-edit:geo/edit/postage
+						 :geoid geoid)
+					:method "get"
+					:class "form-search")
+				 (:input :type "text" :name "newprovider")
+				 ((:button :type "submit" :class "btn")
+				  "New provider"))
+				(dolist (p (geo-providers geo))
+				  (htm (:h2 (str (provider-name p)))
+				       ((:form :action (restas:genurl
+							'shopper-edit:geo/edit/postage
+							:geoid geoid)
+					       :class "form form-search"
+					       :method "get")
+					(:input :type "hidden" :name "provider"
+						:value (provider-name p))
+					(:input :type "text" :name "weight"
+						:placeholder "Weight (g)")
+					(:input :type "text" :name "price"
+						:placeholder "Price (cents)")
+					((:button :type "submit"
+						  :class "btn")
+					 "Add rate"))
+				       ((:a :href (add-get-parameters-to-url
+						    (restas:genurl 'shopper-edit:geo/edit/postage
+								   :geoid geoid)
+						    (acons "deleteprovider" (provider-name p) nil))
+					    :class "btn btn-danger pull-right")
+					"Delete provider")
+				       ((:table :class "table table-striped table-bordered table-condensed")
+					(:tr (:th "Weight")
+					     (:th "Price")
+					     (:th "Delete"))
+					(str (postage-rows (provider-name p)
+							   (get-postage-rates p))))))))
+		 (edit-bar "All geographies")))))
 
 
-(defun geo-form-page (geo)
-  (make-page (format nil "Editing geography: ~A" (geo-name geo))
-	     (geo-form geo)
-	     (edit-bar "All geographies")))
+
+
+(defmethod edit-tabs ((geo geography) active)
+  (nav-tabs `((,(get-geo-edit-url geo) . "Countries")
+	      (,(get-geo-postage-url geo) . "Postage rates"))
+	    active))
 
 (defun get-geo-edit-url (geo)
-  (restas:genurl 'geo/edit :geoid (hunchentoot:url-encode (geo-name geo))))
+  (restas:genurl 'shopper-edit:geo/edit :geoid (hunchentoot:url-encode (geo-name geo))))
 
+(defun get-geo-postage-url (geo)
+  (restas:genurl 'shopper-edit:geo/edit/postage
+		 :geoid (hunchentoot:url-encode (geo-name geo))))
 
 (defun get-geo-delete-url (geo)
-  (restas:genurl 'geo/delete :geoid (hunchentoot:url-encode (geo-name geo))))
+  (restas:genurl 'shopper-edit:geo/delete
+		 :geoid (hunchentoot:url-encode (geo-name geo))))
 
 (defun geo-form (&optional geo)
   (with-html-output-to-string (s nil :indent t)
@@ -450,6 +504,30 @@ in that geo"
 
 (defun item-available-in? (item geo)
   (member geo (geographies item)))
+
+(defun edit-geographies-page ()
+  (make-page "All geographies"
+	     (with-html-output-to-string (s)
+	       (:h1 "All geographies")
+	       (dolist (g (all-geographies))
+		 (htm
+		  (:h3 (str (geo-name g)))
+		  (:p (if-let (members (geo-members g))
+			(fmt "~{~A~^, ~}."
+			     (sort (mapcar (compose #'cdr
+						    #'get-country-info-from-iso-code)
+					   members)
+				   #'string<))
+			(str "No member countries")))
+		  (:p ((:a :class "btn btn-small btn-primary pull-left"
+			   :href (get-geo-edit-url g))
+		       "Edit")
+		      ((:a :class "btn btn-small btn-danger pull-right"
+			   :href (get-geo-delete-url g))
+		       "Delete"))
+		  (:hr))))
+	     (edit-bar "All geographies")))
+
 
 ;; 	Ireland and NI		UK		Europe		Rest	
 ;; 	Standard	Courier	Standard	Courier	Standard	Courier	Standard	Courier

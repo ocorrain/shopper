@@ -157,7 +157,7 @@
 	(values t nil)
 	(values nil '(general . "This address is not valid.  The minimum we
     require is the first lineof the address, a confirmed email adress,
-    one of city or region/province/state, and a valid contry")))))
+    one of city or region/province/state, and a valid country")))))
 
 (defmethod display-customer-address ((customer customer))
   (with-html-output-to-string (s)

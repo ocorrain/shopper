@@ -84,19 +84,19 @@
 ;;   (format nil "/edit/item/~A/view" (sku line-item)))
 
 (defmethod get-edit-view-url ((line-item line-item))
-  (restas:genurl 'r/edit-item/view :sku (sku line-item)))
+  (restas:genurl 'shopper-edit:r/edit-item/view :sku (sku line-item)))
 
 (defmethod get-edit-edit-url ((line-item line-item))
-  (restas:genurl 'r/edit-item/edit :sku (sku line-item)))
+  (restas:genurl 'shopper-edit:r/edit-item/edit :sku (sku line-item)))
 
 (defmethod get-edit-image-url ((line-item line-item))
-  (restas:genurl 'r/edit-item/images :sku (sku line-item)))
+  (restas:genurl 'shopper-edit:r/edit-item/images :sku (sku line-item)))
 
 (defmethod get-edit-tags-url ((line-item line-item))
-  (restas:genurl 'r/edit-item/tags :sku (sku line-item)))
+  (restas:genurl 'shopper-edit:r/edit-item/tags :sku (sku line-item)))
 
 (defmethod get-edit-contents-url ((line-item line-item))
-  (restas:genurl 'r/edit-item/contents :sku (sku line-item)))
+  (restas:genurl 'shopper-edit:r/edit-item/contents :sku (sku line-item)))
 
 (defun collect-items-with (func)
   (let ((result '()))

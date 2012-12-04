@@ -1,18 +1,24 @@
 (in-package #:shopper)
 
+(restas:define-module #:shopper-edit
+    (:use #:cl #:shopper #:restas #:alexandria))
+
+(in-package #:shopper-edit)
+
 ;; ITEMs, bundles or single items
 
 ; new items
+
 (restas:define-route r/new-item
-    ("/new/item")
+    ("new/item")
   (new-item-page))
 
 (restas:define-route r/new-item/post
-    ("/new/item" :method :post)
+    ("new/item" :method :post)
   (maybe-create 'item (fix-alist (hunchentoot:post-parameters*))))
 
 (restas:define-route r/delete-item
-    ("/delete/item/:(sku)")
+    ("delete/item/:(sku)")
   (if-let (obj (get-item sku))
     (progn
       (dolist (tag (ele:pset-list (tags obj)))
@@ -22,61 +28,34 @@
       (hunchentoot:redirect (hunchentoot:referer))) 
     hunchentoot:+http-not-found+))
 
-; existing items
-(defun edit-item-page (test title)
-  (make-page title
-	     (thumbnails (collect-items-with test)
-			 (lambda (item)
-			   (render-thumb item t)))
-	     (edit-bar title)))
-
 (restas:define-route /r/edit
     ("/edit")
-  (make-page
-   "Edit"
-   (with-html-output-to-string (s)
-     ((:div :class "hero-unit")
-      (:h1 "Edit and create items")
-      (:p "Here you can add new items, and edit existing items")
-      ((:a :class "btn btn-primary btn-large" :href "/new/item")
-       "Create a new item")
-      ((:a :class "btn btn-primary btn-large pull-right" :href "/edit/items")
-       "Edit an existing item"))
-
-     ((:div :class "hero-unit")
-      (:h1 "Edit and create tags")
-      (:p "Here you can add new items, and edit existing items")
-      ((:a :class "btn btn-primary btn-large" :href "/new/tag")
-       "Create a new tag")
-      ((:a :class "btn btn-primary btn-large pull-right" :href "/edit/tags")
-       "Edit an existing tag")))
-   (edit-bar "Edit")))
-
+  (edit-front-page))
 
 (restas:define-route r/edit-items
-    ("/edit/items")
+    ("edit/items")
   (edit-item-page #'identity "All items"))
 
 (restas:define-route r/edit-published
-    ("/edit/items/published")
+    ("edit/items/published")
   (edit-item-page #'published "Published items"))
 
 (restas:define-route r/edit-unpublished
-    ("/edit/items/unpublished")
+    ("edit/items/unpublished")
   (edit-item-page (lambda (item) (not (published item))) "Unpublished items"))
 
 (restas:define-route r/edit-featured
-    ("/edit/items/featured")
+    ("edit/items/featured")
   (edit-item-page #'featured "Featured items"))
 
 (restas:define-route r/edit-item/view 
-    ("/edit/item/:(sku)/view")
+    ("edit/item/:(sku)/view")
   (if-let (item (get-item sku))
     (display-item-page item)
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/edit-item/images
-    ("/edit/item/:(sku)/images")
+    ("edit/item/:(sku)/images")
   (if-let (item (get-item sku))
     (progn
       (when-let (image-to-delete (hunchentoot:get-parameter "delete"))
@@ -88,7 +67,7 @@
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/edit-item/images/post
-    ("/edit/item/:(sku)/images" :method :post)
+    ("edit/item/:(sku)/images" :method :post)
   (if-let (item (get-item sku))
     (progn
       (when-let (picture (hunchentoot:post-parameter "picture"))
@@ -97,20 +76,20 @@
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/edit-item/contents
-    ("/edit/item/:(sku)/contents")
+    ("edit/item/:(sku)/contents")
   (if-let (item (get-item sku))
     (bundle-edit-page item)
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/edit-item/contents/post
-    ("/edit/item/:(sku)/contents" :method :post)
+    ("edit/item/:(sku)/contents" :method :post)
   (if-let (item (get-item sku))
     (progn (maybe-update-bundle item)
 	   (bundle-edit-page item))
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/delete-tag
-    ("/delete/tag/:(tag)")
+    ("delete/tag/:(tag)")
   (if-let (obj (get-tag tag))
     (progn
       (dolist (item (ele:pset-list (tag-members obj)))
@@ -120,7 +99,7 @@
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/edit-item/tags
-    ("/edit/item/:(sku)/tags")
+    ("edit/item/:(sku)/tags")
   (if-let (item (get-item sku))
     (progn
       (when-let (toggle-tag (hunchentoot:get-parameter "tag"))
@@ -137,13 +116,13 @@
 ;;     (format s "Editing ~A contents" sku)))
 
 (restas:define-route r/edit-item/edit
-    ("/edit/item/:(sku)/edit")
+    ("edit/item/:(sku)/edit")
   (if-let (item (get-item sku))
     (edit-item-edit-page item)
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/edit-item/edit/post
-    ("/edit/item/:(sku)/edit" :method :post)
+    ("edit/item/:(sku)/edit" :method :post)
   (if-let (item (get-item sku))
     (progn
       (update-geos item (hunchentoot:post-parameters*))
@@ -151,23 +130,96 @@
       (edit-item-edit-page item))
     hunchentoot:+http-not-found+))
 
-(defun get-image-number-as-string (image)
-  (second (split-sequence:split-sequence #\_
-					 (pathname-name image))))
+;; TAGS
 
-(defun image-edit-page (item)
-  (let ((this-url (restas:genurl 'r/edit-item/images :sku (sku item))))
-    (make-page (format nil "Editing images for ~A" (sku item))
-	       (concatenate 'string (edit-tabs item "Images") (image-form item)
-			    (image-thumbnails (images item)
-					      (lambda (image)
-						(with-html-output-to-string (s)
-						  (:img :src (get-thumb-url image))
-						  (:br)
-						  ((:a :class "btn btn-danger"
-						       :href (url-rewrite:add-get-param-to-url
-							      this-url
-							      "delete"
-							      (get-image-number-as-string image)))
-						   "Delete"))))) 
-	       (edit-bar "All items"))))
+(restas:define-route r/new-tag
+    ("/new/tag")
+  (make-page "Create new tag" (tag-form) (edit-bar "New tag")))
+
+(restas:define-route r/new-tag/post
+    ("/new/tag" :method :post)
+  (maybe-create 'tag (fix-alist (hunchentoot:post-parameters*))))
+
+(restas:define-route r/edit-tags
+    ("/edit/tags")
+  (edit-tag-page #'identity "All tags"))
+
+(restas:define-route r/edit-menu-tags
+    ("/edit/tags/menu")
+  (edit-tag-page #'appears-in-menu "Menu tags"))
+
+(restas:define-route r/edit-featured-tags
+    ("/edit/tags/featured")
+  (edit-tag-page (lambda (tag)
+		   (and (featured tag) (appears-in-menu tag))) "Featured tags"))
+
+(restas:define-route r/edit-tag/view 
+    ("/edit/tag/:(tag)/view")
+  (if-let (tag-object (get-tag tag))
+    (make-page (tag-name tag-object)
+	       (concatenate 'string
+			    (edit-tabs tag-object "View")
+			    (tag-display-page tag-object))
+	       
+	       
+	       (edit-bar (tag-name tag-object)))
+    hunchentoot:+http-not-found+))
+
+
+(restas:define-route r/edit-tag/edit
+    ("/edit/tag/:(tag)/edit")
+  (if-let (tag-obj (get-tag tag))
+    (tag-edit-page tag-obj)
+    hunchentoot:+http-not-found+))
+
+(restas:define-route r/edit-tag/edit/post
+    ("/edit/tag/:(tag)/edit" :method :post)
+  (if-let (tag-obj (get-tag tag))
+    (progn
+      (maybe-update tag-obj (fix-alist (hunchentoot:post-parameters*)))
+      (tag-edit-page tag-obj))
+    hunchentoot:+http-not-found+))
+
+;; geography
+
+(restas:define-route geo/new
+    ("/new/geo")
+  (make-page "Create a new geography" (geo-form) (edit-bar "New geography")))
+
+(restas:define-route geo/new/post
+    ("/new/geo" :method :post)
+  (when-let (name (hunchentoot:post-parameter "title"))
+    (if-let (already-existing (ele:get-instance-by-value 'geography
+							  'geography-name
+							  name))
+	     (hunchentoot:redirect (get-geo-edit-url already-existing))
+	     (let ((new-geo (make-instance 'geography :name name)))
+	       (setf (geo-members new-geo)
+		     (remove-if-not (lambda (p)
+				      (get-country-info-from-iso-code p))
+				    (mapcar #'car (hunchentoot:post-parameters*))))
+	       (hunchentoot:redirect (get-geo-edit-url new-geo))))))
+
+(restas:define-route geo/delete
+    ("geo/delete/:(geoid)")
+  (when-let (geo (ele:get-instance-by-value 'geography
+					    'geography-name
+					    (hunchentoot:url-decode geoid)))
+    (ele:drop-instance geo)
+    (hunchentoot:redirect "/edit/geos")))
+
+(restas:define-route geos/edit
+    ("edit/geos")
+  (edit-geographies-page))
+
+(restas:define-route geo/edit
+    ("edit/geo/:(geoid)")
+  (geo-form-page geoid))
+
+(restas:define-route geo/edit/post
+    ("edit/geo/:(geoid)" :method :post)
+  (geo-form-page geoid (hunchentoot:post-parameters*)))
+
+(restas:define-route geo/edit/postage
+    ("edit/geo/:(geoid)/postage")
+  (shopper::geo-postage-page geoid (hunchentoot:get-parameters*)))
