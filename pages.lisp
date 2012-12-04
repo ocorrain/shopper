@@ -17,7 +17,78 @@
 						   (all-tags)))))))
    (edit-bar "All items")))
  
+(defun edit-tag-page (test title)
+  (make-page title
+	     (thumbnails (collect-tags-with test)
+			 (lambda (item)
+			   (render-thumb item t)))
+	     (edit-bar title)))
 
+(defun tag-edit-page (tag)
+  (make-page (format nil "Editing ~A" (tag-name tag))
+	     (concatenate 'string
+			  (edit-tabs tag "Edit")
+			  (tag-form tag))
+	     (edit-bar "New tag")))
+
+(defun tag-display-page (tag)
+  (with-html-output-to-string (s)
+    (when (and (description tag) (not (zerop (length (description tag)))))
+      (htm ((:div :class "well") (str (description tag)))))
+    (when-let (thumbs (remove-if-not #'published
+				   (ele:pset-list (tag-members tag))))
+      (str (thumbnails thumbs #'render-thumb)))))
+
+
+; existing items
+(defun edit-item-page (test title)
+  (make-page title
+	     (thumbnails (collect-items-with test)
+			 (lambda (item)
+			   (render-thumb item t)))
+	     (edit-bar title)))
+
+(defun get-image-number-as-string (image)
+  (second (split-sequence:split-sequence #\_
+					 (pathname-name image))))
+
+(defun image-edit-page (item)
+  (let ((this-url (restas:genurl 'r/edit-item/images :sku (sku item))))
+    (make-page (format nil "Editing images for ~A" (sku item))
+	       (concatenate 'string (edit-tabs item "Images") (image-form item)
+			    (image-thumbnails (images item)
+					      (lambda (image)
+						(with-html-output-to-string (s)
+						  (:img :src (get-thumb-url image))
+						  (:br)
+						  ((:a :class "btn btn-danger"
+						       :href (url-rewrite:add-get-param-to-url
+							      this-url
+							      "delete"
+							      (get-image-number-as-string image)))
+						   "Delete"))))) 
+	       (edit-bar "All items"))))
+
+(defun edit-front-page ()
+  (make-page
+   "Edit"
+   (with-html-output-to-string (s)
+     ((:div :class "hero-unit")
+      (:h1 "Edit and create items")
+      (:p "Here you can add new items, and edit existing items")
+      ((:a :class "btn btn-primary btn-large" :href "/new/item")
+       "Create a new item")
+      ((:a :class "btn btn-primary btn-large pull-right" :href "/edit/items")
+       "Edit an existing item"))
+
+     ((:div :class "hero-unit")
+      (:h1 "Edit and create tags")
+      (:p "Here you can add new items, and edit existing items")
+      ((:a :class "btn btn-primary btn-large" :href "/new/tag")
+       "Create a new tag")
+      ((:a :class "btn btn-primary btn-large pull-right" :href "/edit/tags")
+       "Edit an existing tag")))
+   (edit-bar "Edit")))
 
 ;; (hunchentoot:define-easy-handler (index-page :uri "/index.html")
 ;;     ()

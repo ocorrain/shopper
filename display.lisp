@@ -46,7 +46,7 @@ function just makes sure the right components are included."
 	   (:li ((:a :href "#contact") "Contact"))))
 	 
 	 (when-let (cart (get-cart))
-	   (htm ((:a :href "/checkout" :class "pull-right btn btn btn-primary")
+	   (htm ((:a :href "/enter-details" :class "pull-right btn btn btn-primary")
 		 "CHECKOUT")
 		((:a :href "/shopping-cart" :class "pull-right btn btn-warning")
 		 (:i :class "icon-shopping-cart icon-white")

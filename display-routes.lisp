@@ -1,5 +1,7 @@
 (in-package #:shopper)
 
+
+
 (restas:define-route r/index-page
     ("/")
   (make-page (format nil "Welcome to ~A" (store-name *web-store*))
@@ -197,7 +199,7 @@
   (basic-page "Re-enter address details"
 	      (with-html-output-to-string (s)
 		((:div :class "container")
-		 (str (customer-address-content errors))))))
+		 (str (customer-address-form errors))))))
 
 (restas:define-route r/shopping-cart/place-order/get
     ("/place-order")

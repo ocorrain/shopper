@@ -105,13 +105,13 @@
 
 
 (defmethod get-edit-view-url ((tag tag))
-  (restas:genurl 'r/edit-tag/view :tag (webform tag)))
+  (restas:genurl 'shopper-edit:r/edit-tag/view :tag (webform tag)))
 
 (defmethod get-edit-edit-url ((tag tag))
-  (restas:genurl 'r/edit-tag/edit :tag (webform tag)))
+  (restas:genurl 'shopper-edit:r/edit-tag/edit :tag (webform tag)))
 
 (defmethod get-delete-url ((obj line-item))
-  (restas:genurl 'r/delete-item :sku (sku obj)))
+  (restas:genurl 'shopper-edit:r/delete-item :sku (sku obj)))
 
 (defun render-tags (list-of-tags)
   (with-html-output-to-string (s)
