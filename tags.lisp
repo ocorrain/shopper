@@ -91,11 +91,11 @@
      (dolist (tag tags)
        (htm (:li ((:a :href (get-tag-url tag)) (str (tag-name tag)))))))))
 
-(defun get-tag-url (tag)
-  (url-rewrite:add-get-param-to-url "/display-tag" "name" (webform tag)))
+;; (defun get-tag-url (tag)
+;;   (url-rewrite:add-get-param-to-url "/display-tag" "name" (webform tag)))
 
 (defmethod get-view-url ((tag tag))
-  (format nil "/view/tag/~A" (webform tag)))
+  (restas:genurl 'r/view-tag :tag (webform tag)))
 
 (defun get-tagged-items (tag)
   (ele:pset-list (tag-members tag)))
@@ -105,13 +105,13 @@
 
 
 (defmethod get-edit-view-url ((tag tag))
-  (format nil "/edit/tag/~A/view" (webform tag)))
+  (restas:genurl 'r/edit-tag/view :tag (webform tag)))
 
 (defmethod get-edit-edit-url ((tag tag))
-  (format nil "/edit/tag/~A/edit" (webform tag)))
+  (restas:genurl 'r/edit-tag/edit :tag (webform tag)))
 
 (defmethod get-delete-url ((obj line-item))
-  (format nil "/delete/item/~A" (sku obj)))
+  (restas:genurl 'r/delete-item :sku (sku obj)))
 
 (defun render-tags (list-of-tags)
   (with-html-output-to-string (s)

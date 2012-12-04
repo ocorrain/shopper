@@ -77,23 +77,26 @@
       (format nil "~A_~A" (sku item) (image-counter item))
     (incf (image-counter item))))
 
-(defmethod get-url ((line-item line-item))
-  (url-rewrite:add-get-param-to-url "/item" "sku" (sku line-item)))
+;; (defmethod get-url ((line-item line-item))
+;;   (url-rewrite:add-get-param-to-url "/item" "sku" (sku line-item)))
+
+;; (defmethod get-edit-view-url ((line-item line-item))
+;;   (format nil "/edit/item/~A/view" (sku line-item)))
 
 (defmethod get-edit-view-url ((line-item line-item))
-  (format nil "/edit/item/~A/view" (sku line-item)))
+  (restas:genurl 'r/edit-item/view :sku (sku line-item)))
 
 (defmethod get-edit-edit-url ((line-item line-item))
-  (format nil "/edit/item/~A/edit" (sku line-item)))
+  (restas:genurl 'r/edit-item/edit :sku (sku line-item)))
 
 (defmethod get-edit-image-url ((line-item line-item))
-  (format nil "/edit/item/~A/images" (sku line-item)))
+  (restas:genurl 'r/edit-item/images :sku (sku line-item)))
 
 (defmethod get-edit-tags-url ((line-item line-item))
-  (format nil "/edit/item/~A/tags" (sku line-item)))
+  (restas:genurl 'r/edit-item/tags :sku (sku line-item)))
 
 (defmethod get-edit-contents-url ((line-item line-item))
-  (format nil "/edit/item/~A/contents" (sku line-item)))
+  (restas:genurl 'r/edit-item/contents :sku (sku line-item)))
 
 (defun collect-items-with (func)
   (let ((result '()))
@@ -119,7 +122,8 @@
   (price item))
 
 (defmethod get-view-url ((item line-item))
-  (format nil "/view/item/~A" (sku item)))
+  (restas:genurl 'r/view-item :sku (sku item)))
+
 
 (defun item-list->table-form (items item-input-func item-display-func action-url)
   (with-html-output-to-string (s)
@@ -140,5 +144,5 @@
 		   (items *web-store*))
     items))
 
-(defmethod get-view-url ((item line-item))
-  (format nil "/view/item/~A" (sku item)))
+;; (defmethod get-view-url ((item line-item))
+;;   (format nil "/view/item/~A" (sku item)))

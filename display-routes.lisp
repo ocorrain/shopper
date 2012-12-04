@@ -87,11 +87,11 @@
 
 
 
-(restas:define-route r/shopping-cart/checkout/post
-    ("/checkout" :method :post)
-  (make-page "Enter address details"
-	     (customer-address-content)
-	     (main-site-bar "")))
+;; (restas:define-route r/shopping-cart/checkout/post
+;;     ("/checkout" :method :post)
+;;   (make-page "Enter address details"
+;; 	     (customer-address-content)
+;; 	     (main-site-bar "")))
 
 (restas:define-route r/shopping-cart/place-order
     ("/place-order" :method :post)
@@ -203,28 +203,28 @@
     ("/place-order")
   (order-edit-details-page))
 
-(defun validate-or-cancel-order ()
-  (let ((cart (get-or-initialize-cart))
-	(customer (get-or-initialize-customer)))
-    (with-html-output-to-string (s)
-      ((:div :class "row")
-       ((:div :class "span5")
-	((:div :class "well")
-	 (str (display-customer customer))))
-       ((:div :class "span5")
-	((:div :class "well")
-	 (str (print-shopping-cart cart)))))
-      ((:div :class "row")
-       ((:div :class "span5")
-	((:a :href "/checkout" :class "btn btn-primary pull-left")
-	 "Change address"))
-       ((:div :class "span5")
-	((:a :href "/shopping-cart" :class "btn btn-primary pull-right")
-	 "Change shopping cart")))
-      ((:div :class "row")
-       ((:div :class "span3")
-	((:a :href "/gateway" :class "btn btn-large btn-warning")
-	 "PLACE ORDER"))))))
+;; (defun validate-or-cancel-order ()
+;;   (let ((cart (get-or-initialize-cart))
+;; 	(customer (get-or-initialize-customer)))
+;;     (with-html-output-to-string (s)
+;;       ((:div :class "row")
+;;        ((:div :class "span5")
+;; 	((:div :class "well")
+;; 	 (str (display-customer customer))))
+;;        ((:div :class "span5")
+;; 	((:div :class "well")
+;; 	 (str (print-shopping-cart cart)))))
+;;       ((:div :class "row")
+;;        ((:div :class "span5")
+;; 	((:a :href "/checkout" :class "btn btn-primary pull-left")
+;; 	 "Change address"))
+;;        ((:div :class "span5")
+;; 	((:a :href "/shopping-cart" :class "btn btn-primary pull-right")
+;; 	 "Change shopping cart")))
+;;       ((:div :class "row")
+;;        ((:div :class "span3")
+;; 	((:a :href "/gateway" :class "btn btn-large btn-warning")
+;; 	 "PLACE ORDER"))))))
 
 (defun tag-buddies (item)
   (remove item (mappend (lambda (tag)
@@ -237,7 +237,7 @@
 			   tbs
 			   (subseq tbs 0 4))
 		       #'render-very-short
-		       3)))
+		       4)))
 
 
 (defun view-item-page (item)

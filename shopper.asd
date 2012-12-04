@@ -10,6 +10,7 @@
 	       :elephant
 	       :cl-who
 	       :alexandria
+	       :local-time
 	       :url-rewrite
 	       :lisp-magick
 	       :cl-fad

@@ -17,8 +17,8 @@
 (defmethod get-postage-rates ((provider provider))
   (sort (copy-list (items provider)) #'< :key #'qlist-entry-quantity))
 
-(defmethod get-url ((geo geography))
-  (url-rewrite:add-get-param-to-url "/geo" "n" (get-webform (geo-name geo))))
+;; (defmethod get-url ((geo geography))
+;;   (url-rewrite:add-get-param-to-url "/geo" "n" (get-webform (geo-name geo))))
 
 (defun get-geo (webform)
   (find webform (ele:get-instances-by-class 'geography)
@@ -408,10 +408,11 @@ in that geo"
 	     (edit-bar "All geographies")))
 
 (defun get-geo-edit-url (geo)
-  (format nil "/edit/geo/~A" (hunchentoot:url-encode (geo-name geo))))
+  (restas:genurl 'geo/edit :geoid (hunchentoot:url-encode (geo-name geo))))
+
 
 (defun get-geo-delete-url (geo)
-  (format nil "/geo/delete/~A" (hunchentoot:url-encode (geo-name geo))))
+  (restas:genurl 'geo/delete :geoid (hunchentoot:url-encode (geo-name geo))))
 
 (defun geo-form (&optional geo)
   (with-html-output-to-string (s nil :indent t)

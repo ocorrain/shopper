@@ -19,10 +19,10 @@
  
 
 
-(hunchentoot:define-easy-handler (index-page :uri "/index.html")
-    ()
-  (standard-page "Welcome to sample store"
-		 (thumbnails (get-random-featured-items 20) #'display-short)))
+;; (hunchentoot:define-easy-handler (index-page :uri "/index.html")
+;;     ()
+;;   (standard-page "Welcome to sample store"
+;; 		 (thumbnails (get-random-featured-items 20) #'display-short)))
 
 (defun thumbnails (list render-func &optional (items-across 4))
   (let ((rows (partition-list list items-across)))
@@ -45,9 +45,9 @@
 (defmethod render-very-short ((obj line-item))
   (with-html-output-to-string (s)
     ((:a :href (get-view-url obj))
-     (:h5 (str (title obj)))
      (when (images obj)
-       (htm (str (display-an-image obj)))))))
+       (htm (str (display-a-small-image obj))))
+     (:h5 (str (title obj))))))
 
 
 (defmethod render-thumb ((obj line-item) &optional edit)
@@ -131,22 +131,22 @@
 ;; 		 (thumbnails items #'display-short)
 ;; 		 (sample-sidebar valid-tag)))))
 
-(hunchentoot:define-easy-handler (add-to-bundle-page :uri "/add-to-bundle")
-    ((bundleadd :parameter-type 'hash-table)
-     sku)
-  (case (hunchentoot:request-method*)
-    (:post (when-let ((bundle (get-item sku))
-		      (items-to-add
-		       (let ((items '())) 
-				   (maphash (lambda (k v)
-					      (when-let (number (parse-integer
-								 v :junk-allowed t))
-						(push (cons (get-item k) number) items)))
-					    bundleadd)
-				   items)))
-	     (dolist (item items-to-add)
-	       (add-item (car item) bundle (cdr item)))
-	     (hunchentoot:redirect (get-url bundle))))))
+;; (hunchentoot:define-easy-handler (add-to-bundle-page :uri "/add-to-bundle")
+;;     ((bundleadd :parameter-type 'hash-table)
+;;      sku)
+;;   (case (hunchentoot:request-method*)
+;;     (:post (when-let ((bundle (get-item sku))
+;; 		      (items-to-add
+;; 		       (let ((items '())) 
+;; 				   (maphash (lambda (k v)
+;; 					      (when-let (number (parse-integer
+;; 								 v :junk-allowed t))
+;; 						(push (cons (get-item k) number) items)))
+;; 					    bundleadd)
+;; 				   items)))
+;; 	     (dolist (item items-to-add)
+;; 	       (add-item (car item) bundle (cdr item)))
+;; 	     (hunchentoot:redirect (get-url bundle))))))
 
 
 ;; (hunchentoot:define-easy-handler (new-single-item :uri "/single-item/new")

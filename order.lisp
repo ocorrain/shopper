@@ -40,7 +40,7 @@
   (ele:get-instance-by-value 'order 'gateway-ref gateway-ref))
 
 (defmethod confirmation-url ((order order))
-  (format nil "/confirm/~A" (order-number order)))
+  (restas:genurl 'order/confirm :order-ref (order-number order)))
 
 (restas:define-route order/confirm
     ("/confirm/:(order-ref)")
@@ -58,7 +58,7 @@
 
 
 (defmethod cancellation-url ((order order))
-  (format nil "/cancel/~A" (order-number order)))
+  (restas:genurl 'order/cancel :order-ref (order-number order)))
 
 (restas:define-route order/cancel
     ("/cancel/:(order-ref)")
@@ -77,6 +77,29 @@
 	(setf (hunchentoot:session-value :cart) (cart order))
 	(ele:drop-instance order)
 	(order-cancelled-page)))))
+
+(restas:define-route order-details
+    ("/admin/orders")
+  (make-page "Manage orders"
+	     (order-manage-page)
+	     (edit-bar "Orders")))lo
+
+(defun order-manage-page ()
+  (let ((orders (ele:get-instances-by-class 'order)))
+    (with-html-output-to-string (s)
+      ((:div :class "row")
+       (:table
+	  (dolist (order orders)
+	    (with-slots (order-number order-state order-timestamps order-postage-price order-price)
+		order
+	      (htm (:tr (:td (str order-number))
+			(:td (str (string-capitalize (symbol-name order-state))))
+			(:td (str (cdr (car order-timestamps))))
+			(:td (str (print-price order-postage-price)))
+			(:td (str (print-price order-price))))))))))))
+
+(defun get-most-recent-order-timestamp (order)
+  (local-time:universal-to-timestamp (cdar (order-timestamps order))))
 
 (defun order-cancelled-page ()
   (basic-page "Order cancelled"

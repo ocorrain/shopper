@@ -156,7 +156,7 @@
 					 (pathname-name image))))
 
 (defun image-edit-page (item)
-  (let ((this-url (format nil "/edit/item/~A/images" (sku item))))
+  (let ((this-url (restas:genurl 'r/edit-item/images :sku (sku item))))
     (make-page (format nil "Editing images for ~A" (sku item))
 	       (concatenate 'string (edit-tabs item "Images") (image-form item)
 			    (image-thumbnails (images item)
@@ -165,8 +165,9 @@
 						  (:img :src (get-thumb-url image))
 						  (:br)
 						  ((:a :class "btn btn-danger"
-						       :href (url-rewrite:add-get-param-to-url this-url
-											       "delete"
-											       (get-image-number-as-string image)))
+						       :href (url-rewrite:add-get-param-to-url
+							      this-url
+							      "delete"
+							      (get-image-number-as-string image)))
 						   "Delete"))))) 
 	       (edit-bar "All items"))))
