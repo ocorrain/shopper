@@ -3,6 +3,19 @@
 
 (in-package #:shopper)
 
+(defun edit-store-form ()
+  (with-html-output-to-string (s nil :indent t)
+    ((:form :action (restas:genurl 'shopper-edit:store/edit/parameters)
+	    :method :post)
+     (textfield "name" s "Name" "The name of this web-store" (store-name *web-store*))
+     (textfield "sku" s "SKU prefix" "Alphabetic prefix for stock-keeping-units"
+		(sku-prefix *web-store*))
+     (textfield "order" s "Order prefix" "Alphabetic prefix for orders"
+		(order-prefix *web-store*))
+     (checkbox "open" s "Open?" (store-open *web-store*))
+     (:br)
+     (submit-button "Submit" s))))
+
 (defun item-form (&optional line-item)
   (with-html-output-to-string (s nil :indent t)
     ((:form :action (if line-item (format nil (get-edit-edit-url line-item) (sku line-item))

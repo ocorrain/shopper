@@ -100,13 +100,15 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 		(with-html-output-to-string (s)
 		  (:img :src (get-thumb-url image))))))
 
-(defmethod display-an-image ((item line-item))
+(defmethod display-an-image ((item line-item) &optional (image-func #'get-thumb-url))
   (with-html-output-to-string (s)
-    (:img :class "img-polaroid" :src (get-thumb-url (random-elt (images item))))))
+    (:img :class "img-polaroid"
+	  :src (funcall image-func (random-elt (images item))))))
 
 (defmethod display-a-small-image ((item line-item))
   (with-html-output-to-string (s)
-    (:img :class "img-polaroid" :src (get-small-url (random-elt (images item))))))
+    (:img :class "img-polaroid"
+	  :src (get-small-url (random-elt (images item))))))
 
 
 (defun display-gallery (images id)

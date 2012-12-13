@@ -15,12 +15,16 @@
 	       :lisp-magick
 	       :cl-fad
 	       :drakma
+	       :md5
+	       :puri
 	       :cl-html-parse)
   :components ((:file "shopper")
 	       (:file "display-routes")
 	       (:file "edit-routes")
 ;	       (:file "tag-routes")
 	       (:file "cart-routes")
+	       (:file "user")
+	       (:file "user-routes")
 	       (:file "js")
 	       (:file "widgets")
 	       (:file "item")
