@@ -65,14 +65,10 @@
 (defclass https-require (routes:proxy-route) ())
 
 (defclass shopper-acceptor (restas:restas-acceptor)
-  ()
-  (:default-initargs
-   :message-log-destination #p"/home/ocorrain/shopper.log"))
+  ())
 
 (defclass shopper-ssl-acceptor (restas:restas-acceptor)
-  ()
-  (:default-initargs
-   :message-log-destination #p"/home/ocorrain/shopper_ssl.log"))
+  ())
 
 (defun start-shopper (&optional store-path)
   (unless *web-store*
