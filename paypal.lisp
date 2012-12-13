@@ -27,6 +27,7 @@
 
 (defmethod paypal-item-manifest ((order order) &optional (order-number 0))
   "return an alist of the paypal fields to describe the items"
+  (declare (ignore order-number))
   (with-slots (reified-cart) order
     (let ((alist '()))
       (dotimes (i (length reified-cart))
@@ -44,6 +45,7 @@
       (reverse alist))))
 
 (defmethod standard-paypal-fields ((order order) method &optional (order-number 0))
+  (declare (ignore order-number))
   (list (cons "METHOD" method)
 	(cons "VERSION" *paypal-api-version*)
 	(cons "USER" (get-paypal-api-username))
@@ -55,7 +57,8 @@
 	(cons "ALLOWNOTE" "1")))
 
 (defmethod paypal-payment-fields ((order order) &optional (order-number 0))
-  (list (cons "PAYMENTREQUEST_0_AMT"
+  (declare (ignore order-number))
+ (list (cons "PAYMENTREQUEST_0_AMT"
 	      (paypal-amt (+ (postage-price order) (get-price (cart order)))))
 	(cons "PAYMENTREQUEST_0_CURRENCYCODE" "EUR")
 	(cons "PAYMENTREQUEST_0_PAYMENTACTION" "Sale")
@@ -64,6 +67,7 @@
 	(cons "PAYMENTREQUEST_0_SHIPPINGAMT" (paypal-amt (postage-price order)))))
 
 (defmethod customer-paypal-fields ((order order) &optional (order-number 0))
+  (declare (ignore order-number))
   (with-slots (customer) order
     (let ((customer-alist
 	   (list (cons "PAYMENTREQUEST_0_SHIPTONAME" (name customer))
@@ -71,6 +75,7 @@
 		 (cons "PAYMENTREQUEST_0_SHIPTOCITY" (address2 customer))
 		 (cons "PAYMENTREQUEST_0_SHIPTOSTATE" (region customer))
 		 (cons "PAYMENTREQUEST_0_SHIPTOCOUNTRYCODE" (country customer))
+		 (cons "SHIPTOCOUNTRY" (country customer))
 		 (cons "ADDROVERRIDE" "1"))))
       (when (address2 customer)
 	(push (cons "PAYMENTREQUEST_0_SHIPTOSTREET2" (address2 customer)) customer-alist))
@@ -96,15 +101,27 @@
 	  (paypal-payment-fields order order-number)))
 
 (defmacro with-paypal-context ((function order order-number) &body body)
-  `(multiple-value-bind (status response)
-       (paypal-api-call (,function ,order ,order-number))
-     (flet ((get-pp-response (key)
-	      (get-pp-value key response)))
-       (if status
-	   (progn ,@body)
-	   (if (numberp response)
-	       (error "HTTP call to paypal failed, HTTP return code: ~D" response)
-	       (error "Call to paypal API failed"))))))
+  `(let ((api-call-parameters (,function ,order ,order-number)))
+     (multiple-value-bind (status response)
+	 (paypal-api-call api-call-parameters)
+       (flet ((get-pp-response (key)
+		(get-pp-value key response)))
+	 (if status
+	     (progn ,@body)
+	     (if (numberp response)
+		 (error 'paypal-http-error :code response)
+		 (error 'paypal-api-error
+			:sent api-call-parameters
+			:received response)))))))
+
+
+
+(define-condition paypal-api-error (error)
+  ((sent-parameters :initarg :sent :reader sent)
+   (response-parameters :initarg :received :reader received)))
+
+(define-condition paypal-http-error (error)
+  ((response-code :initarg :code :reader response-code)))
 
 (defmethod paypal-api-call-setexpresscheckout ((order order) &optional (order-number 0))
   (with-paypal-context (paypal-setexpresscheckout-parameters order order-number)

@@ -1,7 +1,8 @@
 (in-package #:shopper)
 
 (restas:define-module #:shopper-edit
-    (:use #:cl #:shopper #:restas #:alexandria))
+    (:use #:cl #:shopper #:restas #:alexandria)
+  (:decorators '@http-auth-require))
 
 (in-package #:shopper-edit)
 
@@ -223,3 +224,11 @@
 (restas:define-route geo/edit/postage
     ("edit/geo/:(geoid)/postage")
   (shopper::geo-postage-page geoid (hunchentoot:get-parameters*)))
+
+(restas:define-route store/edit/parameters
+    ("edit/store")
+  (edit-store-page))
+
+(restas:define-route store/edit/parameters/post
+    ("edit/store" :method :post)
+  (edit-store-page (hunchentoot:post-parameters*)))

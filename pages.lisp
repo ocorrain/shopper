@@ -3,6 +3,105 @@
 
 (in-package #:shopper)
 
+(defun edit-store-page (&optional parameters)
+  (when parameters
+    (flet ((get-p (parameter)
+	     (when-let (value (cdr (assoc parameter parameters :test #'string-equal)))
+	       (when (and (stringp value) (not (zerop (length value))))
+		 value))))
+      (when-let (name (get-p "name"))
+	(setf (store-name *web-store*) name))
+      (when-let (skup (get-p "sku"))
+	(setf (sku-prefix *web-store*) skup))
+      (when-let (orderp (get-p "order"))
+	(setf (order-prefix *web-store*) orderp))
+      (if (get-p "open")
+	  (setf (store-open *web-store*) t)
+	  (setf (store-open *web-store*) nil))))
+  (basic-page "Edit store parameters"
+	      (with-html-output-to-string (s)
+		((:div :class "container")
+		 ;; (:pre (describe *web-store* s))
+		 ;; (:pre (fmt "~S" parameters))
+		 (:h1 "Edit global parameters")
+		 (str (edit-store-form))))))
+
+(defun store-open-dependent-page (page-func)
+  (if (store-open *web-store*)
+      (funcall page-func)
+      (basic-page (format nil "~A is closed" (store-name *web-store*))
+		  (with-html-output-to-string (s)
+		    ((:div :class "container")
+		     ((:div :class "hero-unit")
+		      (:h3 (fmt "~A is closed" (store-name *web-store*)))))))))
+
+
+(defun shopping-cart-page ()
+  (basic-page "View shopping cart"
+	      (with-html-output-to-string (s)
+		  ((:div :class "container")
+		 (str (shopping-cart-form (get-or-initialize-cart)))))))
+
+(defun enter-details-page ()
+  (basic-page "Enter customer details"
+	      (with-html-output-to-string (s)
+		((:div :class "container")
+		 (:h2 "Enter shipping details")
+		 (str (customer-address-form))))))
+
+(defun paypal-errors (sent received)
+  (with-html-output-to-string (s)
+    ((:div :class "container")
+     ((:div :class "row")
+      ((:div :class "span5")
+       (:h2 "Sent")
+       (:dl
+	(dolist (item sent)
+	  (htm (:dt (fmt "~A" (car item)))
+	       (:dd (fmt "~A" (cdr item)))))))
+      ((:div :class "span5")
+       (:h2 "Received")
+       (:dl
+	(dolist (item received)
+	  (htm (:dt (fmt "~A" (car item)))
+	       (:dd (fmt "~A" (cdr item)))))))))))
+
+(defun paypal-error-page (sent received)
+  (basic-page "Paypal error"
+	      (paypal-errors sent received)))
+
+
+
+(defun index-page ()
+  (make-page (format nil "Welcome to ~A" (store-name *web-store*))
+	     (with-html-output-to-string (s)
+	       ((:div :class "hero-unit")
+		(:h1 (str (store-name *web-store*)))
+		(:p "Chocolate. There are few foods that people feel as
+		passionate about&mdash;a passion that goes beyond a love
+		for the 'sweetness' of most candies or desserts: after
+		all, few people crave caramel, whipped cream, or
+		bubble gum. Chocolate is, well, different. For the
+		true chocoholic, just thinking about chocolate can
+		evoke a pleasurable response. You may want to grab a
+		bar or make a nice cup of hot cocoa before you begin
+		exploring here.")
+		(:p ((:a :class "btn btn-success btn-large pull-right"
+			 :href "/featured")
+		     "See our featured items!")))
+	       ;(:h2 "Featured categories")
+	       (str (thumbnails (featured-tags)
+				#'render-very-short 4)))
+	     (main-site-bar "")))
+
+(defun featured-items-page ()
+  (make-page (format nil "Featured items")
+	     (with-html-output-to-string (s)
+	       (:h2 "Featured items")
+	       (str (thumbnails (remove-if-not #'featured (all-items))
+				#'render-thumb)))
+	     (main-site-bar "")))
+
 (defun make-tags-page (item)
   (make-page
    (format nil "Tags for ~A" (title item))
@@ -53,9 +152,11 @@
 					 (pathname-name image))))
 
 (defun image-edit-page (item)
-  (let ((this-url (restas:genurl 'r/edit-item/images :sku (sku item))))
+  (let ((this-url (restas:genurl 'shopper-edit:r/edit-item/images :sku (sku item))))
     (make-page (format nil "Editing images for ~A" (sku item))
-	       (concatenate 'string (edit-tabs item "Images") (image-form item)
+	       (concatenate 'string
+			    (edit-tabs item "Images")
+			    (image-form item)
 			    (image-thumbnails (images item)
 					      (lambda (image)
 						(with-html-output-to-string (s)
@@ -117,7 +218,7 @@
   (with-html-output-to-string (s)
     ((:a :href (get-view-url obj))
      (when (images obj)
-       (htm (str (display-a-small-image obj))))
+       (htm (str (display-an-image obj #'get-small-url))))
      (:h5 (str (title obj))))))
 
 
@@ -136,7 +237,8 @@
       (htm (:p (when (published obj)
 		 (htm ((:span :class "label") "Published")
 		      (when (featured obj)
-			(htm ((:span :class "label label-success") "Featured"))))))))
+			(htm ((:span :class "label label-success")
+			      "Featured"))))))))
     
     
     (:p (str (short-description obj))
@@ -171,6 +273,35 @@
 	    "Edit")
 	   ((:a :class "btn btn-mini btn-danger pull-right" :href (get-delete-url obj))
 	    "Delete")))))
+
+(defmethod render-thumb ((obj tag) &optional edit)
+  (with-html-output-to-string (s)
+    ((:a :href (get-view-url obj))
+     (htm (str (display-an-image obj)))
+     (:h5 (str (tag-name obj))))
+ 
+    (when edit
+      (htm (:p (when (appears-in-menu obj)
+	    (htm ((:span :class "label") "Menu")
+		 (when (featured obj)
+		   (htm ((:span :class "label label-success") "Featured"))))))))
+    
+    (:p (str (description obj)))
+    
+    (when edit
+      (htm ((:a :class "btn btn-mini" :href (get-edit-edit-url obj))
+	    "Edit")
+	   ((:a :class "btn btn-mini btn-danger pull-right"
+		:href (get-delete-url obj))
+	    "Delete")))))
+
+(defmethod render-very-short ((obj tag))
+  (with-html-output-to-string (s)
+    ((:a :href (get-view-url obj))
+     (htm (str (display-an-image obj #'get-small-url)))
+     (:h5 (str (tag-name obj))))
+    (:p (str (description obj)))))
+
 
 (defmethod get-delete-url ((tag tag))
   (format nil "/delete/tag/~A" (webform tag)))

@@ -48,7 +48,8 @@
 	       :initform #p"" :accessor xml-path :type pathname)
    (audit-path :initarg :audit-path
 	       :initform #p"" :accessor audit-path :type pathname)
-   (base-path :initarg :base-path :accessor base-path :type pathname)))
+   (base-path :initarg :base-path :accessor base-path :type pathname)
+   (open :initarg :open :initform nil :accessor store-open)))
 
 (defun open-web-store (dir)
   (ele:open-store (list :bdb (dirconcat dir "store")))

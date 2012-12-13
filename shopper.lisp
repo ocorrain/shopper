@@ -6,6 +6,7 @@
 	   #:maybe-update
 	   #:items
 	   #:images
+	   #:basic-page
 	   #:get-image-number-as-string
 	   #:get-tag
 	   #:tag-members
@@ -15,6 +16,7 @@
 	   #:items
 	   #:untag-item
 	   #:*web-store*
+	   #:edit-store-page
 	   #:make-page
 	   #:thumbnails
 	   #:collect-items-with
@@ -50,8 +52,8 @@
 	   #:edit-item-edit-page
 	   #:update-geos
 	   #:geo-postage-page
-	   #:image-edit-page)
-  )
+	   #:image-edit-page))
+
 
 (in-package #:shopper)
 
@@ -60,12 +62,72 @@
 
 (defclass http-auth-route (routes:proxy-route) ())
 
+(defclass https-require (routes:proxy-route) ())
+
+(defclass shopper-acceptor (restas:restas-acceptor)
+  ()
+  (:default-initargs
+   :message-log-destination #p"/home/ocorrain/shopper.log"))
+
+(defclass shopper-ssl-acceptor (restas:restas-acceptor)
+  ()
+  (:default-initargs
+   :message-log-destination #p"/home/ocorrain/shopper_ssl.log"))
+
+(defun start-shopper (&optional store-path)
+  (unless *web-store*
+    (open-web-store store-path))
+  (mount-webstore-content)
+  (restas:start '#:shopper :port 9292
+		:acceptor-class 'shopper-acceptor)
+  (restas:start '#:shopper-edit :port 9292
+		:acceptor-class 'shopper-ssl-acceptor)
+  (restas:start '#:shopper-login :port 9292
+		:acceptor-class 'shopper-ssl-acceptor))
+
+(defun log-describe (object)
+  (hunchentoot:log-message* :debug "~A"
+			    (with-output-to-string (s)
+			      (describe object s))))
+
+(defun get-current-route-symbol ()
+  (restas:route-symbol (routes:proxy-route-target restas:*route*)))
+
 (defmethod routes:route-check-conditions ((route http-auth-route) bindings)
-  (and (call-next-method)
-       (multiple-value-bind (user password) (hunchentoot:authorization)
-         (or (and (string= user "hello")
-                  (string= password "world"))
-             (hunchentoot:require-authorization)))))
+;  (log-describe hunchentoot:*session*)
+  (cond ((null (hunchentoot:session-value :user))
+	 (hunchentoot:log-message* :debug "No user session found, redirecting to /login")
+	 (hunchentoot:redirect "/login")
+	 ;; (let ((uri (puri:uri (restas:gen-full-url 'shopper-edit:login))))
+	 ;;   (setf (puri:uri-scheme uri) :https)
+	 ;;   (hunchentoot:redirect (with-output-to-string (s)
+	 ;; 			   (puri:render-uri uri s))))
+	 )
+	((not (equal (hunchentoot:header-in* "X-Forwarded-Proto")
+  		  "https"))
+	 (let* ((route-symbol (get-current-route-symbol))
+		(route-uri (puri:uri (restas:gen-full-url route-symbol))))
+	   (setf (puri:uri-scheme route-uri) :https)
+	   ;; (log-describe (with-output-to-string (s)
+	   ;; 		   (puri:render-uri route-uri s)))
+	   (hunchentoot:redirect (with-output-to-string (s)
+				   (puri:render-uri route-uri s)))))
+	(t (call-next-method))))
+
+(defmethod routes:route-check-conditions ((route https-require) bindings)
+  (if (not (equal (hunchentoot:header-in* "X-Forwarded-Proto")
+  		  "https"))
+      (let* ((route-symbol (get-current-route-symbol))
+		(route-uri (puri:uri (restas:gen-full-url route-symbol))))
+	   (setf (puri:uri-scheme route-uri) :https)
+	   ;; (log-describe (with-output-to-string (s)
+	   ;; 		   (puri:render-uri route-uri s)))
+	   (hunchentoot:redirect (with-output-to-string (s)
+				   (puri:render-uri route-uri s))))
+      (call-next-method)))
+
+
+
 
 (defun @http-auth-require (route)
   (make-instance 'http-auth-route :target route))
@@ -79,7 +141,7 @@
     (restas.directory-publisher:*baseurl* '("s"))
     (restas.directory-publisher:*directory* (get-twitter-bootstrap-path))
     (restas.directory-publisher:*autoindex* nil))
-  (restas:mount-submodule admin-interface (#:shopper-edit @http-auth-require))
+  ;; (restas:mount-submodule admin-interface (#:shopper-edit @http-auth-require))
   (restas:reconnect-all-routes))
 
 

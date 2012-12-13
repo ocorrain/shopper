@@ -142,13 +142,12 @@
 			 (tag-name tag)))
 	  list-of-tags))
 
-(defmethod display-an-image ((tag tag))
+(defmethod display-an-image ((tag tag) &optional (image-func #'get-thumb-url))
   (when-let (member-list (ele:pset-list (tag-members tag)))
     (when-let (images (mappend #'images member-list))
       (with-html-output-to-string (s)
 	(:img :class "img-polaroid"
-	      :src (get-thumb-url
-		    (random-elt images)))))))
+	      :src (funcall image-func (random-elt images)))))))
 
 
 

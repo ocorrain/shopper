@@ -1,19 +1,12 @@
 (in-package #:shopper)
 
-
-
 (restas:define-route r/index-page
     ("/")
-  (make-page (format nil "Welcome to ~A" (store-name *web-store*))
-	     (with-html-output-to-string (s)
-	       (:h2 "Featured categories")
-	       (str (thumbnails (featured-tags)
-				#'render-thumb))
-	       (:h2 "Featured items")
-	       (str (thumbnails (remove-if-not #'featured (all-items))
-				#'render-thumb)))
-	     
-	     (main-site-bar "")))
+  (index-page))
+
+(restas:define-route r/featured
+    ("/featured")
+  (featured-items-page))
 
 (restas:define-route r/view-tag
     ("/view/tag/:(tag)")
@@ -24,26 +17,17 @@
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/shopping-cart/view ("/shopping-cart")
-    (basic-page "View shopping cart"
-	      (with-html-output-to-string (s)
-		((:div :class "container")
-		 (str (shopping-cart-form (get-or-initialize-cart)))))))
+  (store-open-dependent-page #'shopping-cart-page))
 
 (restas:define-route r/enter-details ("/enter-details")
-    (basic-page "Enter customer details"
-		(with-html-output-to-string (s)
-		  ((:div :class "container")
-		   (:h2 "Enter shipping details")
-		   (str (customer-address-form))))))
+  (store-open-dependent-page #'enter-details-page))
 
 (restas:define-route r/shopping-cart/view/post
     ("/shopping-cart" :method :post)
-  (maybe-update-cart (get-or-initialize-cart) (hunchentoot:post-parameters*))
-  (basic-page "View shopping cart"
-	      (with-html-output-to-string (s)
-		((:div :class "container")
-		 (str (shopping-cart-form (get-or-initialize-cart)))))))
-
+  (store-open-dependent-page
+   (lambda ()
+     (maybe-update-cart (get-or-initialize-cart) (hunchentoot:post-parameters*))
+     (shopping-cart-page))))
 
 (defun maybe-update-cart (cart parameters)
   (dolist (item-q (get-valid-objects-from-post parameters))
@@ -53,39 +37,51 @@
 
 (restas:define-route r/shopping-cart/checkout/post
     ("/checkout" :method :post)
-  (if-let ((cart (get-cart))
-	   (postage (hunchentoot:post-parameter "postage"))
-	   (customer (get-customer)))
-    (if-let (geo (get-geo-from-country-code (country customer)))
-      (let ((rates (get-applicable-postage-rates (get-weight cart) geo)))
-	(if-let (this-rate (assoc postage rates :test #'string-equal))
-	  (let ((order (cart->order cart)))
-	    (setf (postage-price order) (cdr this-rate))
-	    (if (paypal-api-call-setexpresscheckout order)
-	      (hunchentoot:redirect (paypal-redirect-url order))
-	      (error "We failed"))))))))
+  (store-open-dependent-page
+   (lambda ()
+     (if-let ((cart (get-cart))
+	      (postage (hunchentoot:post-parameter "postage"))
+	      (customer (get-customer)))
+       (if-let (geo (get-geo-from-country-code (country customer)))
+	 (let ((rates (get-applicable-postage-rates (get-weight cart) geo)))
+	   (if-let (this-rate (assoc postage rates :test #'string-equal))
+	     (let ((order (cart->order cart)))
+	       (setf (postage-price order) (cdr this-rate))
+	       (handler-case
+		   (when (paypal-api-call-setexpresscheckout order)
+		     (hunchentoot:redirect (paypal-redirect-url order)))
+		 (paypal-api-error (condition)
+		   (hunchentoot:log-message* :debug "in handler-case")
+		   (paypal-error-page (sent condition) (received condition))))))))))))
+
+
 
 (restas:define-route r/shopping-cart/success
     ("/success")
-  (if-let (order (get-order-by-gateway-ref (hunchentoot:get-parameter "token")))
-    (progn
-      (if (paypal-api-call-getexpresscheckoutdetails order)
-	  (basic-page "Confirm your purchase"
-		      (with-html-output-to-string (s)
-			((:div :class "container")
-			 (str (shopping-cart-display
-			       (cart order)
-			       (with-html-output-to-string (s)
-				 (:h3 "Confirm order")
-				 (:p "If you wish to make this
+  (store-open-dependent-page
+   (lambda ()
+     (if-let (order (get-order-by-gateway-ref (hunchentoot:get-parameter "token")))
+       (when (handler-case
+		 (paypal-api-call-getexpresscheckoutdetails order)
+	       (paypal-api-error (condition)
+		 (paypal-error-page (sent condition) (received condition))))
+	 (basic-page "Confirm your purchase"
+		     (with-html-output-to-string (s)
+		       ((:div :class "container")
+			(str (shopping-cart-display
+			      (cart order)
+			      (with-html-output-to-string (s)
+				(:h3 "Confirm order")
+				(:p "If you wish to make this
 				 purchase, please click Confirm &
 				 Buy on this page."))))
-			 ((:a :class "btn btn-large btn-warning pull-left"
-			      :href (cancellation-url order))
-			  "Cancel order")
-			 ((:a :class "btn btn-large btn-primary pull-right"
-				 :href (confirmation-url order))
-			     "Confirm & buy"))))))))
+			((:a :class "btn btn-large btn-warning pull-left"
+			     :href (cancellation-url order))
+			 "Cancel order")
+			((:a :class "btn btn-large btn-primary pull-right"
+			     :href (confirmation-url order))
+			 "Confirm & buy")))))))))
+
 
 
 
@@ -97,7 +93,7 @@
 
 (restas:define-route r/shopping-cart/place-order
     ("/place-order" :method :post)
-  (order-edit-details-page))
+  (store-open-dependent-page #'order-edit-details-page))
 
 (defun order-edit-details-page ()
   (multiple-value-bind (customer errors)
@@ -146,7 +142,7 @@
 		       (destructuring-bind (item quantity) i
 			 (htm ((:div :class "row")
 			       ((:div :class "span2")
-				(str (display-a-small-image item)))
+				(str (display-an-image item #'get-small-url)))
 			       ((:div :class "span8")
 				(:h5 (str (title item)))
 				(:p (str (short-description item)))
@@ -154,7 +150,7 @@
 			       ((:div :class "span2")
 				(:p (str quantity)))))))
 		     ((:div :class "row")
-		      ((:div :class "span2 offset6")
+		      ((:div :class "span2 offset8")
 		       (:p (:strong "Subtotal: ")
 			   (str (print-price (get-price cart))))))
 		     ((:div :class "row")
@@ -203,7 +199,7 @@
 
 (restas:define-route r/shopping-cart/place-order/get
     ("/place-order")
-  (order-edit-details-page))
+  (store-open-dependent-page #'order-edit-details-page))
 
 ;; (defun validate-or-cancel-order ()
 ;;   (let ((cart (get-or-initialize-cart))
