@@ -10,6 +10,7 @@
 	   #:get-image-number-as-string
 	   #:get-tag
 	   #:tag-members
+	   #:tag
 	   #:fix-alist
 	   #:tags
 	   #:item
@@ -86,40 +87,58 @@
 			    (with-output-to-string (s)
 			      (describe object s))))
 
+(defun generate-secure-url (route &rest args)
+  (let ((uri (restas::genurl/impl (concatenate 'list
+					       (restas::submodule-full-baseurl restas:*submodule*)
+					       (restas::route-symbol-template (get-current-route-symbol)))
+				  args)))
+    (setf (puri:uri-scheme uri)
+	  :https)
+    (setf (puri:uri-host uri)
+          (if (boundp 'hunchentoot:*request*)
+                      (hunchentoot:host)
+                      "localhost"))
+    (puri:render-uri uri nil)))
+
 (defun get-current-route-symbol ()
   (restas:route-symbol (routes:proxy-route-target restas:*route*)))
 
 (defmethod routes:route-check-conditions ((route http-auth-route) bindings)
-;  (log-describe hunchentoot:*session*)
+					;  (log-describe hunchentoot:*session*)
+  (hunchentoot:log-message* :debug "SSLP: ~A" (hunchentoot:ssl-p))
+  (hunchentoot:log-message* :debug "Host: ~A" (hunchentoot:host))
+;  (hunchentoot:log-message* :debug "Secure URI: ~A" (generate-secure-url route bindings))
+  (hunchentoot:log-message* :debug "Script: ~A" (hunchentoot:script-name*))
+  (hunchentoot:log-message* :debug "URI: ~A" (hunchentoot:request-uri*))
+
   (cond ((null (hunchentoot:session-value :user))
-	 (hunchentoot:log-message* :debug "No user session found, redirecting to /login")
-	 (hunchentoot:redirect "/login")
-	 ;; (let ((uri (puri:uri (restas:gen-full-url 'shopper-edit:login))))
-	 ;;   (setf (puri:uri-scheme uri) :https)
-	 ;;   (hunchentoot:redirect (with-output-to-string (s)
-	 ;; 			   (puri:render-uri uri s))))
-	 )
-	((not (equal (hunchentoot:header-in* "X-Forwarded-Proto")
-  		  "https"))
-	 (let* ((route-symbol (get-current-route-symbol))
-		(route-uri (puri:uri (restas:gen-full-url route-symbol))))
-	   (setf (puri:uri-scheme route-uri) :https)
-	   ;; (log-describe (with-output-to-string (s)
-	   ;; 		   (puri:render-uri route-uri s)))
-	   (hunchentoot:redirect (with-output-to-string (s)
-				   (puri:render-uri route-uri s)))))
-	(t (call-next-method))))
+  	 (hunchentoot:log-message*
+  	  :debug "No user session found, redirecting to /login")
+  	 (hunchentoot:redirect "/login"))
+	
+  	((not (equal (hunchentoot:header-in* "X-Forwarded-Proto")
+  		     "https"))
+	 (hunchentoot:log-message* :debug "HTTP found, switching to https")
+	 (let ((request-uri (puri:uri (hunchentoot:request-uri*))))
+	   (setf (puri:uri-host request-uri) (hunchentoot:host))
+	   (setf (puri:uri-scheme request-uri) :https)
+	   (hunchentoot:log-message* :debug "Redirect to: ~A" (puri:render-uri request-uri nil))
+	   (hunchentoot:redirect (puri:render-uri request-uri nil))))
+	
+  	(t (call-next-method))))
+
 
 (defmethod routes:route-check-conditions ((route https-require) bindings)
+  (hunchentoot:log-message* :debug "SSLP: ~A" (hunchentoot:ssl-p))
   (if (not (equal (hunchentoot:header-in* "X-Forwarded-Proto")
   		  "https"))
       (let* ((route-symbol (get-current-route-symbol))
-		(route-uri (puri:uri (restas:gen-full-url route-symbol))))
-	   (setf (puri:uri-scheme route-uri) :https)
-	   ;; (log-describe (with-output-to-string (s)
-	   ;; 		   (puri:render-uri route-uri s)))
-	   (hunchentoot:redirect (with-output-to-string (s)
-				   (puri:render-uri route-uri s))))
+	     (route-uri (puri:uri (restas:gen-full-url route-symbol))))
+	(setf (puri:uri-scheme route-uri) :https)
+	;; (log-describe (with-output-to-string (s)
+	;; 		   (puri:render-uri route-uri s)))
+	(hunchentoot:redirect (with-output-to-string (s)
+				(puri:render-uri route-uri s))))
       (call-next-method)))
 
 

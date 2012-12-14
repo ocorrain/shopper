@@ -391,13 +391,23 @@
 	    :class "nav nav-list"))
 
 (defun main-site-bar (active)
-  (nav-tabs (append
-	     (list "Featured")
-	     (tag->nav (featured-tags))
-	     (list "Categories")
-	     (tag->nav (menu-tags)))
-	    active
-	    :class "nav nav-list"))
+  (let ((bar '()))
+    (when (featured-tags)
+      (push (list "Featured") bar)
+      (push (tag->nav (featured-tags)) bar))
+    (when (menu-tags)
+      (push (list "Categories") bar)
+      (push (tag->nav (menu-tags)) bar))
+    (nav-tabs (reduce #'append (reverse bar)) active
+	      :class "nav nav-list")))
+
+  ;; (nav-tabs (append
+  ;; 	     (list "Featured")
+  ;; 	     (tag->nav (featured-tags))
+  ;; 	     (list "Categories")
+  ;; 	     (tag->nav (menu-tags)))
+  ;; 	    active
+  ;; 	    :class "nav nav-list"))
 
 (defun nav-tabs (alist active &key (class "nav nav-tabs"))
   "ALIST cells of the form (URL . LABEL) or plain strings for headers"
