@@ -134,7 +134,7 @@
 (defun collect-tags-with (func)
   (remove-if-not (lambda (tag)
 		   (funcall func tag))
-		 (tags-with-members)))
+		 (all-tags)))
 
 (defun tag->nav (list-of-tags)
   (mapcar (lambda (tag)
