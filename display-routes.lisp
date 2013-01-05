@@ -11,9 +11,8 @@
 (restas:define-route r/view-tag
     ("/view/tag/:(tag)")
   (if-let (tag-object (get-tag tag))
-    (make-page (tag-name tag-object)
-	       (tag-display-page tag-object)
-	       (main-site-bar (tag-name tag-object)))
+    (basic-page (tag-name tag-object)
+		(tag-display-page tag-object))
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/shopping-cart/view ("/shopping-cart")
@@ -239,14 +238,21 @@
 
 
 (defun view-item-page (item)
-  (make-page (format nil "Viewing ~A" (title item))
-	     (with-html-output-to-string (s)
-	       (str (display-item-content item))
-	       (str (display-related-items item)))
+  (basic-page (format nil "Viewing ~A" (title item))
+	      (with-html-output-to-string (s)
+		((:div :class "container")
+		 (str (display-item-content item))
+		 (str (display-related-items item))))))
+
+
+;; (make-page 
+;; 	     (with-html-output-to-string (s)
+;; 	       (str (display-item-content item))
+;; 	       (str (display-related-items item)))
 	     
-	     (main-site-bar "")
-	     (with-html-output-to-string (s)
-	       (:script "$('.carousel').carousel()"))))
+;; 	     ;; (main-site-bar "")
+;; 	     (with-html-output-to-string (s)
+;; 	       (:script "$('.carousel').carousel()"))))
 
 (restas:define-route r/view-item
     ("/view/item/:(sku)")

@@ -73,26 +73,48 @@
 
 
 (defun index-page ()
-  (make-page (format nil "Welcome to ~A" (store-name *web-store*))
-	     (with-html-output-to-string (s)
-	       ((:div :class "hero-unit")
-		(:h1 (str (store-name *web-store*)))
-		(:p "Chocolate. There are few foods that people feel as
-		passionate about&mdash;a passion that goes beyond a love
-		for the 'sweetness' of most candies or desserts: after
-		all, few people crave caramel, whipped cream, or
-		bubble gum. Chocolate is, well, different. For the
-		true chocoholic, just thinking about chocolate can
-		evoke a pleasurable response. You may want to grab a
-		bar or make a nice cup of hot cocoa before you begin
-		exploring here.")
-		(:p ((:a :class "btn btn-success btn-large pull-right"
-			 :href "/featured")
-		     "See our featured items!")))
-	       ;(:h2 "Featured categories")
-	       (str (thumbnails (featured-tags)
-				#'render-very-short 4)))
-	     (main-site-bar "")))
+  (basic-page (format nil "Welcome to ~A" (store-name *web-store*))
+	      (with-html-output-to-string (s)
+		;; ((:div :class "well")
+					;(:h2 "Featured categories")
+		((:div :class "container")
+		 ((:div :class "row")
+		  ((:div :class "span6")
+		   (:h1 (str (store-name *web-store*)))
+		   (:p "Chocolate. There are few foods that people feel as
+	       	passionate about&mdash;a passion that goes beyond a love
+	       	for the 'sweetness' of most candies or desserts: after
+	       	all, few people crave caramel, whipped cream, or
+	       	bubble gum. Chocolate is, well, different. For the
+	       	true chocoholic, just thinking about chocolate can
+	       	evoke a pleasurable response. You may want to grab a
+	       	bar or make a nice cup of hot cocoa before you begin
+	       	exploring here.")
+		   ;; (:p ((:a :class "btn btn-success btn-large pull-right"
+		   ;; 	    :href "/featured")
+		   ;; 	"See our featured items!"))
+		   )
+		  ((:div :class "span6")
+		   (str (carousel "featuredCarousel"
+				  (get-featured-items 10)
+				  (lambda (item)
+				    (with-html-output-to-string (s)
+				      (str (display-an-image item #'get-full-url))
+				      (:div :class "carousel-caption"
+					    (:h4 ((:a :href (get-view-url item))
+						  (str (title item))) )
+					    (:p (str (short-description item)))))))))))
+	     
+		(:script "$('.carousel').carousel()"))))
+
+(defun get-featured-items (&optional number)
+  "If NUMBER is specified, return a list of featured items at most
+  NUMBER long, otherwise return all featured items."
+  (let ((featured (remove-if-not #'featured (all-items))))
+    (cond (number (if (> (length featured) number)
+		      (subseq (shuffle featured) 0 number)
+		      featured))
+	  (t featured))))
 
 (defun featured-items-page ()
   (make-page (format nil "Featured items")
@@ -132,11 +154,13 @@
 
 (defun tag-display-page (tag)
   (with-html-output-to-string (s)
-    (when (and (description tag) (not (zerop (length (description tag)))))
+    ((:div :class "container")
+     (when (and (description tag) (not (zerop (length (description tag)))))
       (htm ((:div :class "well") (str (description tag)))))
     (when-let (thumbs (remove-if-not #'published
-				   (ele:pset-list (tag-members tag))))
-      (str (thumbnails thumbs #'render-thumb)))))
+				     (ele:pset-list (tag-members tag))))
+      (str (thumbnails thumbs #'render-thumb))))
+    ))
 
 
 ; existing items
@@ -401,6 +425,8 @@
     (nav-tabs (reduce #'append (reverse bar)) active
 	      :class "nav nav-list")))
 
+
+
   ;; (nav-tabs (append
   ;; 	     (list "Featured")
   ;; 	     (tag->nav (featured-tags))
@@ -453,13 +479,18 @@
 (defun display-item-content (item)
   (with-html-output-to-string (s)
     ((:div :class "row")
-     ((:div :class "span5")
+     ((:div :class "span6")
       (:h2 (str (title item)))
-      
-
       ((:p :class "lead") (str (short-description item)))
       (:p (str (long-description item)))
 
+      ((:div :class "well well-small")
+       ((:dl :class "dl-horizontal")
+	(:dt "Price")
+	(:dd (str (print-price (get-price item))))
+	(:dt "Weight")
+	(:dd (fmt "~A g" (get-weight item))))
+       )
       (str (cart-widget item))
 
       (when (not (empty? (get-children-qlist item)))
@@ -467,15 +498,10 @@
 	     (:ul (dolist (i (items (get-children-qlist item)))
 		    (destructuring-bind (ii iq) i
 		      (htm (:li (fmt "~A x ~A" iq (title ii))))))))))
-     ((:div :class "span5")
-      ((:div :class "well")
-       (str (carousel "imageCarousel" (images item) #'full-image-element))
-       ((:dl :class "dl-horizontal")
-	(:dt "Price")
-	(:dd (str (print-price (get-price item))))
-	(:dt "Weight")
-	(:dd (fmt "~A g" (get-weight item))))
-       )))))
+     ((:div :class "span6")
+      (str (carousel "imageCarousel" (images item) #'full-image-element))
+      ))
+    (:script "$('.carousel').carousel()")))
 
 (defun full-image-element (image)
   (with-html-output-to-string (s)

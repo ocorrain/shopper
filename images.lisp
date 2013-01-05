@@ -18,24 +18,24 @@
 ;; 	(lisp-magick:magick-write-image wand thumbname))))
 
 
-(defun create-thumbnail (filename thumbname width height)
+(defun create-thumbnail (filename thumbname width height &optional (frame-color (list 0 0 0)))
   "Create a thumbnail the image in FILENAME with a max size of WIDTH x HEIGHT
 pixel (but with the original aspect ratio) and save it in THUMBNAME."
   (if (or (pathnamep filename)
 	  (pathnamep thumbname))
       (create-thumbnail (namestring filename) (namestring thumbname) width height)
       (lisp-magick:with-magick-wand (wand :load filename)
-	(lisp-magick:with-pixel-wand (pwand)
+	(lisp-magick:with-pixel-wand (pwand :comp (255 255 255))
 	  (multiple-value-bind (new-width new-height padding-width padding-height)
 	      (get-thumbnail-dimensions (lisp-magick:magick-get-image-width wand)
 					(lisp-magick:magick-get-image-height wand)
 					width height)
 	    (lisp-magick:magick-scale-image wand new-width new-height)
-	      (lisp-magick:magick-frame-image wand pwand 
-					      padding-width
-					      padding-height
-					      0 0))
-	(lisp-magick:magick-write-image wand thumbname)))))
+	    (lisp-magick:magick-frame-image wand pwand 
+					    padding-width
+					    padding-height
+					    0 0))
+	  (lisp-magick:magick-write-image wand thumbname)))))
 
 (defun get-thumbnail-dimensions (width height box-width box-height)
   (let ((image-aspect (/ width height))
@@ -62,7 +62,7 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
   (concatenate 'string "/images/"
 	       (namestring (get-small-size-path path))))
 
-(defun resize-all-images ()
+(defun resize-all-images (&optional (frame-color '(255 255 255)))
   (ele:map-btree (lambda (key item)
 		   (declare (ignore key))
 		   (when-let (images (images item))
@@ -76,15 +76,18 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 			 (format t "Making ~A~%" thumb-path)
 			 (create-thumbnail dest-path thumb-path
 					   (get-config-option :thumbnail-width)
-					   (get-config-option :thumbnail-height))
+					   (get-config-option :thumbnail-height)
+					   frame-color)
 			 (format t "Making ~A~%" full-size-path)
 			 (create-thumbnail dest-path full-size-path
 					   (get-config-option :display-width)
-					   (get-config-option :display-height))
+					   (get-config-option :display-height)
+					   frame-color)
 			 (format t "Making ~A~%" small-size-path)
 			 (create-thumbnail dest-path small-size-path
 					   (get-config-option :small-width)
-					   (get-config-option :small-height))))))
+					   (get-config-option :small-height)
+					   frame-color)))))
 		 (items *web-store*)))
 
 (defun image-thumbnails (list render-func)

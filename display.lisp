@@ -3,7 +3,6 @@
 
 (in-package #:shopper)
 
-
 (defun make-page (title body &optional sidebar end-matter)
   "each of TITLE BODY and SIDEBAR should return strings.  This
 function just makes sure the right components are included."
@@ -20,48 +19,64 @@ function just makes sure the right components are included."
 
 (defun basic-page (title body)
   "each of TITLE BODY and SIDEBAR should return strings.  This
-function just makes sure the right components are included."
+function just makes sure the right components are included and sets up
+some basic CSS."
   (with-html-output-to-string (s nil :prologue t :indent t)
     ((:html :lang "en") (:head (:title (str title))
 			       (:link :href "/s/css/bootstrap.min.css" :rel "stylesheet")
-			       (:style "body {
-        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
-      }"))
+			       ;; (:style "body {
+			       ;;   padding-top: 186px; /* 60px to make the container go all the way to the bottom of the topbar */
+			       ;; }")
+			       )
      (:body
-      ((:div :class "navbar navbar-inverse navbar-fixed-top")
-       ((:div :class "navbar-inner")
-	((:div :class "container")
-	 ((:a :class "btn btn-navbar" :data-toggle "collapse" :data-target ".nav-collapse")
-	  (:span :class "icon-bar")
-	  (:span :class "icon-bar")
-	  (:span :class "icon-bar"))
-	 
 
-	 ((:a :class "brand" href="#") (str (store-name *web-store*)))
+       ((:div :class "container")
+	((:div :class "navbar") ; (:div :class "navbar navbar-fixed-top")	 
+
+	;; ((:a :class "btn btn-navbar" :data-toggle "collapse" :data-target ".nav-collapse")
+	;;  (:span :class "icon-bar")
+	;;  (:span :class "icon-bar")
+	;;  (:span :class "icon-bar"))
+					;	 ((:a :class "brand" href="#") (str (store-name *web-store*)))
+	(:img :src "/images/banner.jpg")
 	 ((:div :class "nav-collapse collapse")
-	  ((:ul :class "nav")
+	  ((:ul :class "nav nav-pills")
 	   ((:li :class "active")
 	    ((:a :href "/") "Home"))
 	   (:li ((:a :href "#about") "About"))
 	   (:li ((:a :href "#contact") "Contact"))
+	   (:li :class "divider-vertical")
+	   ((:li :class "dropdown")
+	    ((:a :class "dropdown-toggle"
+		 :data-toggle "dropdown"
+		 :href "#")
+	     "Featured"
+	     (:b :class "caret"))
+	    (str (nav-tabs (tag->nav (featured-tags)) nil :class "dropdown-menu")))
+	   ((:li :class "dropdown")
+	    ((:a :class "dropdown-toggle"
+		 :data-toggle "dropdown"
+		 :href "#")
+	     "Categories"
+	     (:b :class "caret"))
+	    (str (nav-tabs (tag->nav (menu-tags)) nil :class "dropdown-menu")))
 	   (when-let (user (hunchentoot:session-value :user))
-	     (htm ;(:li (fmt "Logged in as ~A" (username user)))
-		  (:li ((:a :href "/edit")
-			"Edit"))
-		  (:li ((:a :href "/logout")
-			"Log out"))))))
-
-	 
-	 (when (store-open *web-store*)
-	   (when-let (cart (get-cart))
-	     (htm ((:a :href "/enter-details" :class "pull-right btn btn btn-primary")
-		   "CHECKOUT")
-		  ((:a :href "/shopping-cart" :class "pull-right btn btn-warning")
-		   (:i :class "icon-shopping-cart icon-white")
-		   (str (count-items-in cart))
-		   ;; (fmt "~A items in cart" (count-items-in cart))
-		   )))) )))
-      
+	     (htm	;(:li (fmt "Logged in as ~A" (username user)))
+	      (:li :class "divider-vertical")
+	      (:li ((:a :href "/edit")
+		    "Edit"))
+	      (:li ((:a :href "/logout")
+		    "Log out"))))));; ((:div :class "navbar-inner")
+	 ;; )
+	(when (store-open *web-store*)
+	  (when-let (cart (get-cart))
+	    (htm ((:a :href "/enter-details" :class "pull-right btn btn btn-primary")
+		  "CHECKOUT")
+		 ((:a :href "/shopping-cart" :class "pull-right btn btn-warning")
+		  (:i :class "icon-shopping-cart icon-white")
+		  (str (count-items-in cart))
+		  ;; (fmt "~A items in cart" (count-items-in cart))
+		  ))))))
       (str body)
 	    
       (:script :src "http://code.jquery.com/jquery-latest.js")
@@ -100,24 +115,24 @@ function just makes sure the right components are included."
       (cons (subseq list 0 partition-length)
 	    (partition-list (subseq list partition-length) partition-length))))
 
-(defun display-q (item stream)
-  (with-html-output (s stream)
-    (when (images item)
-      (htm (:img :src (get-thumb-url (random-elt (images item))))
-	   (:br)
-	   ((:a :href (get-url item)) (str (title item)))
-	   (:input :type "text" :size 3 :name (format nil "bundleadd{~A}" (sku item)))))))
+;; (defun display-q (item stream)
+;;   (with-html-output (s stream)
+;;     (when (images item)
+;;       (htm (:img :src (get-thumb-url (random-elt (images item))))
+;; 	   (:br)
+;; 	   ((:a :href (get-url item)) (str (title item)))
+;; 	   (:input :type "text" :size 3 :name (format nil "bundleadd{~A}" (sku item)))))))
 
 (defgeneric display-short (item))
 
-(defmethod display-short ((item line-item))
-  (with-html-output-to-string (s)
-    (when-let ((images (get-images item)))
-      (htm (:img :src (get-thumb-url (random-elt images)))
-	   (:br)))
-    ((:a :href (get-url item)) (str (title item)))
-    (:br)
-    (str (print-price (get-price item)))))
+;; (defmethod display-short ((item line-item))
+;;   (with-html-output-to-string (s)
+;;     (when-let ((images (get-images item)))
+;;       (htm (:img :src (get-thumb-url (random-elt images)))
+;; 	   (:br)))
+;;     ((:a :href (get-url item)) (str (title item)))
+;;     (:br)
+;;     (str (print-price (get-price item)))))
 
 
 ;; (defmethod display-short ((item single-item) stream)
@@ -215,18 +230,18 @@ function just makes sure the right components are included."
 	      (:li (fmt "~A x ~A" (qlist-entry-quantity ql)
 			(title (qlist-entry-item ql))))))))))
 
-(defun bundle-add-form (bundle &optional tag)
-  (let ((items (if tag
-		   (ele:pset-list (get-members tag))
-		   (ele:get-instances-by-class 'single-item))))
-    (lambda (stream)
-      (with-html-output (s stream)
-	((:form :action "/add-to-bundle" :method "post")
-	 (:input :type "hidden" :name "sku" :value (sku bundle))
-	 (:input :type "submit" :value "Save")
-	 (display-table 4 items #'display-q stream)
-	 (:input :type "submit" :value "Save")))
-      "")))
+;; (defun bundle-add-form (bundle &optional tag)
+;;   (let ((items (if tag
+;; 		   (ele:pset-list (get-members tag))
+;; 		   (ele:get-instances-by-class 'single-item))))
+;;     (lambda (stream)
+;;       (with-html-output (s stream)
+;; 	((:form :action "/add-to-bundle" :method "post")
+;; 	 (:input :type "hidden" :name "sku" :value (sku bundle))
+;; 	 (:input :type "submit" :value "Save")
+;; 	 (display-table 4 items #'display-q stream)
+;; 	 (:input :type "submit" :value "Save")))
+;;       "")))
 
 
 
@@ -235,24 +250,24 @@ function just makes sure the right components are included."
       (floor price-in-cents 100)
     (format nil "€~:D.~2,'0D" euro cent)))
 
-(defmethod edit-widget ((item single-item))
-  (lambda (stream)
-    (single-item-form stream item) ""))
-
-;; (defmethod edit-widget ((item bundle))
+;; (defmethod edit-widget ((item single-item))
 ;;   (lambda (stream)
-;;     (bundle-form stream item) ""))
+;;     (single-item-form stream item) ""))
 
-(defmethod images-widget ((item line-item))
-  (lambda (stream)
-    (image-form stream item)
-    (edit-display-images item stream)
-    ""))
+;; ;; (defmethod edit-widget ((item bundle))
+;; ;;   (lambda (stream)
+;; ;;     (bundle-form stream item) ""))
 
-(defmethod tag-widget ((item line-item))
-  (lambda (stream)
-    (tag-widget-printer item stream)
-    ""))
+;; (defmethod images-widget ((item line-item))
+;;   (lambda (stream)
+;;     (image-form stream item)
+;;     (edit-display-images item stream)
+;;     ""))
+
+;; (defmethod tag-widget ((item line-item))
+;;   (lambda (stream)
+;;     (tag-widget-printer item stream)
+;;     ""))
 
 ;; (defmethod bundle-widget ((bundle bundle))
 ;;   (lambda (stream)
@@ -260,16 +275,16 @@ function just makes sure the right components are included."
 ;;     (funcall (bundle-add-form bundle) stream)
 ;;     ""))
 
-(defun sample-sidebar (item)
-  (lambda (stream)
-    (with-html-output (s stream)
-      (:ul (:li ((:a :href "/index.html") "Home"))
-	   (:li ((:a :href "/single-item/new") "New single item"))
-	   (:li ((:a :href "/single-items") "List of single items"))
-	   (:li ((:a :href "/bundle/new") "New bundle"))
-	   (:li ((:a :href "/bundles") "List of bundles"))
-	   (:li ((:a :href "/shopping-cart") "View cart"))))
-    (list-of-tags (all-tags) stream)))
+;; (defun sample-sidebar (item)
+;;   (lambda (stream)
+;;     (with-html-output (s stream)
+;;       (:ul (:li ((:a :href "/index.html") "Home"))
+;; 	   (:li ((:a :href "/single-item/new") "New single item"))
+;; 	   (:li ((:a :href "/single-items") "List of single items"))
+;; 	   (:li ((:a :href "/bundle/new") "New bundle"))
+;; 	   (:li ((:a :href "/bundles") "List of bundles"))
+;; 	   (:li ((:a :href "/shopping-cart") "View cart"))))
+;;     (list-of-tags (all-tags) stream)))
 
 
 (defun header (store-name title)
