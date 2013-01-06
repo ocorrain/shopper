@@ -146,8 +146,7 @@
   (when-let (member-list (ele:pset-list (tag-members tag)))
     (when-let (images (mappend #'images member-list))
       (with-html-output-to-string (s)
-	(:img :class "img-polaroid"
-	      :src (funcall image-func (random-elt images)))))))
+	(:img :src (funcall image-func (random-elt images)))))))
 
 
 
