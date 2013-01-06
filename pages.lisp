@@ -101,7 +101,8 @@
 				    (with-html-output-to-string (s)
 				      (str (display-an-image item #'get-full-url))
 				      (:div :class "carousel-caption"
-					    (:h4 ((:a :href (get-view-url item))
+					    (:h4 ((:a :class "muted"
+						      :href (get-view-url item))
 						  (str (title item))) )
 					    (:p (str (short-description item)))))))))))
 	     
