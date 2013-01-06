@@ -230,11 +230,14 @@
 
 (defun display-related-items (item)
   (when-let (tbs (tag-buddies item))
-    (thumbnails (if (< (length tbs) 4)
+    (with-html-output-to-string (s)
+      (:h4 "Related items")
+      (str (thumbnails (if (< (length tbs) 4)
 			   tbs
 			   (subseq tbs 0 4))
 		       #'render-very-short
-		       4)))
+		       4)))))
+
 
 
 (defun view-item-page (item)

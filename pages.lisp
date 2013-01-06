@@ -230,6 +230,14 @@
 		  (htm ((:div :class span)
 			(str (funcall render-func item))))))))))))
 
+;; (defun thumbnails (list render-func &optional (items-across 4))
+;;   (with-html-output-to-string (s)
+;;     (:ul :class "thumbnails"
+;; 	 (dolist (item list)
+;; 	   (htm (:li :class (format nil "span~A" items-across)
+;; 		     (:div :class "thumbnail"
+;; 			   (str (funcall render-func item)))))))))
+
 ;; (defun thumbnails (list render-func)
 ;;   (with-html-output-to-string (s)
 ;;     ((:ul :class "thumbnails")
@@ -342,12 +350,12 @@
 
 
 
-(defun display-tag (tag)
-  (when-let ((valid-tag (get-tag tag)))
-    (let ((items (get-tagged-items valid-tag)))
-      (make-page (tag-name valid-tag)
-		 (thumbnails items #'display-short)
-		 (sample-sidebar valid-tag)))))
+;; (defun display-tag (tag)
+;;   (when-let ((valid-tag (get-tag tag)))
+;;     (let ((items (get-tagged-items valid-tag)))
+;;       (make-page (tag-name valid-tag)
+;; 		 (thumbnails items #'display-short)
+;; 		 (sample-sidebar valid-tag)))))
 
 ;; (hunchentoot:define-easy-handler (display-tag :uri "/display-tag")
 ;;     (name)
@@ -481,17 +489,19 @@
     ((:div :class "row")
      ((:div :class "span6")
       (:h2 (str (title item)))
+      (:p :class "lead" (str (print-price (get-price item))))
+      (str (cart-widget item))
       ((:p :class "lead") (str (short-description item)))
       (:p (str (long-description item)))
 
-      ((:div :class "well well-small")
-       ((:dl :class "dl-horizontal")
-	(:dt "Price")
-	(:dd (str (print-price (get-price item))))
-	(:dt "Weight")
-	(:dd (fmt "~A g" (get-weight item))))
-       )
-      (str (cart-widget item))
+      ;; ((:div :class "well well-small")
+      ;;  ((:dl :class "dl-horizontal")
+      ;; 	(:dt "Price")
+      ;; 	(:dd (str (print-price (get-price item))))
+      ;; 	(:dt "Weight")
+      ;; 	(:dd (fmt "~A g" (get-weight item))))
+      ;;  )
+      
 
       (when (not (empty? (get-children-qlist item)))
 	(htm (:h5 "Contains")
@@ -499,8 +509,8 @@
 		    (destructuring-bind (ii iq) i
 		      (htm (:li (fmt "~A x ~A" iq (title ii))))))))))
      ((:div :class "span6")
-      (str (carousel "imageCarousel" (images item) #'full-image-element))
-      ))
+      (str (carousel "imageCarousel" (images item) #'full-image-element))))
+    
     (:script "$('.carousel').carousel()")))
 
 (defun full-image-element (image)
@@ -559,19 +569,19 @@
 ;;     (:get (standard-page "Create new bundle" (lambda (stream) (bundle-form stream))))
 ;;     (:post (maybe-create 'bundle (fix-alist (hunchentoot:post-parameters*))))))
 
-(defun edit-display-item (sku)
-  (when-let (item (get-item sku))
-    (case (hunchentoot:request-method*)
-      (:get (make-page (title item)
-		       (lambda (stream)
-			 (with-html-output (s stream)
-			   (funcall (header (store-name *web-store*)
-					    (title item)) s) 
-			   (lightbox-js s)
-			   (funcall (get-tabs item) stream)
-			   (tab-js stream)))
-		       (sample-sidebar item)))
-      (:post (maybe-update item (fix-alist (hunchentoot:post-parameters*)))))))
+;; (defun edit-display-item (sku)
+;;   (when-let (item (get-item sku))
+;;     (case (hunchentoot:request-method*)
+;;       (:get (make-page (title item)
+;; 		       (lambda (stream)
+;; 			 (with-html-output (s stream)
+;; 			   (funcall (header (store-name *web-store*)
+;; 					    (title item)) s) 
+;; 			   (lightbox-js s)
+;; 			   (funcall (get-tabs item) stream)
+;; 			   (tab-js stream)))
+;; 		       (sample-sidebar item)))
+;;       (:post (maybe-update item (fix-alist (hunchentoot:post-parameters*)))))))
 
 
 ;; (hunchentoot:define-easy-handler (display-item :uri "/item") (sku)
