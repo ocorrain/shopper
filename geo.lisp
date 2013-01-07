@@ -358,7 +358,7 @@ in that geo"
 	       (concatenate 'string
 			    (edit-tabs geo "Countries")
 			    (geo-form geo))
-	       (edit-bar "All geographies"))))
+	       :sidebar (edit-bar "All geographies"))))
 
 (defun geo-postage-page (geoid &optional parameters)
   (when-let (geo (ele:get-instance-by-value 'geography
@@ -447,7 +447,7 @@ in that geo"
 					     (:th "Delete"))
 					(str (postage-rows (provider-name p)
 							   (get-postage-rates p))))))))
-		 (edit-bar "All geographies")))))
+		 :sidebar (edit-bar "All geographies")))))
 
 
 
@@ -526,7 +526,7 @@ in that geo"
 			   :href (get-geo-delete-url g))
 		       "Delete"))
 		  (:hr))))
-	     (edit-bar "All geographies")))
+	     :sidebar (edit-bar "All geographies")))
 
 
 ;; 	Ireland and NI		UK		Europe		Rest	

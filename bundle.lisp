@@ -23,7 +23,7 @@
 					  (equal item i)))
 				    (all-items))))
     (make-page (format nil "Editing contents for ~A" (sku item))
-	     (concatenate 'string
+	       (concatenate 'string
 			  (edit-tabs item "Contents")
 			  (when (empty? (get-children-qlist item))
 			    (with-html-output-to-string (s)
@@ -49,5 +49,5 @@
 			      (str (item-list->table-form available-items
 				    #'sku #'title (format nil "/edit/item/~A/contents"
 							  (sku item))))))) 
-	     (edit-bar "All items")))
+	     :sidebar (edit-bar "All items")))
   )

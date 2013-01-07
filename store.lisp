@@ -55,27 +55,6 @@
   (ele:open-store (list :bdb (dirconcat dir "store")))
   (setf *web-store* (ele:get-from-root 'web-store)))
 
-;; (defun start-web-store (port &optional (store *web-store*))
-;;   (let ((acceptor (make-instance 'hunchentoot:easy-acceptor :port port)))
-;;     (setf (acceptor store) acceptor)
-;;     (hunchentoot:start acceptor)
-;;     ;; set up some default paths
-;;     (add-folder-dispatchers)))
-
-;; (defun add-folder-dispatchers ()
-;;   (flet ((add-folder-dispatcher (url path)
-;; 	   (push (hunchentoot:create-folder-dispatcher-and-handler
-;; 		  url path) hunchentoot:*dispatch-table*)))
-;;     (add-folder-dispatcher "/pics/" (image-path *web-store*))
-;;     (add-folder-dispatcher "/css/blueprint/"
-;; 			   (asdf:system-relative-pathname :shopper "blueprint/"))
-;;     (add-folder-dispatcher "/js/"
-;; 			   (asdf:system-relative-pathname  :shopper "js/"))
-;;     (add-folder-dispatcher "/styles/"
-;; 			   (asdf:system-relative-pathname  :shopper "styles/"))
-;;     (add-folder-dispatcher "/images/"
-;; 			   (asdf:system-relative-pathname  :shopper "images/"))))
-
 (defun ensure-pathname-directory (string)
   (if (pathnamep string)
       (ensure-pathname-directory (namestring string))
@@ -124,14 +103,6 @@
       (prog1
 	  (format nil "~A~7,'0d" (sku-prefix store) (sku-counter store))
 	(incf (sku-counter store)))))
-
-
-;; (defun get-next-order (&optional (store *web-store*))
-;;   (ele:with-transaction ()
-;;     (prog1
-;; 	(format nil "~A~7,'0d" (order-prefix store) (order-counter store))
-;;       (incf (order-counter store)))))
-
 
 (defun close-web-store ()
   (ele:close-store)

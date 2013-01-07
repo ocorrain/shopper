@@ -135,7 +135,8 @@
 
 (restas:define-route r/new-tag
     ("/new/tag")
-  (make-page "Create new tag" (tag-form) (edit-bar "New tag")))
+  (make-page "Create new tag" (tag-form)
+	     :sidebar (edit-bar "New tag")))
 
 (restas:define-route r/new-tag/post
     ("/new/tag" :method :post)
@@ -163,7 +164,7 @@
 			    (tag-display-page tag-object))
 	       
 	       
-	       (edit-bar (tag-name tag-object)))
+	       :sidebar (edit-bar (tag-name tag-object)))
     hunchentoot:+http-not-found+))
 
 
@@ -185,7 +186,8 @@
 
 (restas:define-route geo/new
     ("/new/geo")
-  (make-page "Create a new geography" (geo-form) (edit-bar "New geography")))
+  (make-page "Create a new geography" (geo-form)
+	     :sidebar (edit-bar "New geography")))
 
 (restas:define-route geo/new/post
     ("/new/geo" :method :post)

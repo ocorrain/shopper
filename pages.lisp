@@ -123,7 +123,7 @@
 	       (:h2 "Featured items")
 	       (str (thumbnails (remove-if-not #'featured (all-items))
 				#'render-thumb)))
-	     (main-site-bar "")))
+	     :sidebar (main-site-bar "")))
 
 (defun make-tags-page (item)
   (make-page
@@ -137,21 +137,21 @@
 		  (:p (str (render-tags (remove-if (lambda (tag)
 						     (tagged? item tag))
 						   (all-tags)))))))
-   (edit-bar "All items")))
+   :sidebar (edit-bar "All items")))
  
 (defun edit-tag-page (test title)
   (make-page title
 	     (thumbnails (collect-tags-with test)
 			 (lambda (item)
 			   (render-thumb item t)))
-	     (edit-bar title)))
+	     :sidebar (edit-bar title)))
 
 (defun tag-edit-page (tag)
   (make-page (format nil "Editing ~A" (tag-name tag))
 	     (concatenate 'string
 			  (edit-tabs tag "Edit")
 			  (tag-form tag))
-	     (edit-bar "New tag")))
+	     :sidebar (edit-bar "New tag")))
 
 (defun tag-display-page (tag)
   (with-html-output-to-string (s)
@@ -170,7 +170,7 @@
 	     (thumbnails (collect-items-with test)
 			 (lambda (item)
 			   (render-thumb item t)))
-	     (edit-bar title)))
+	     :sidebar (edit-bar title)))
 
 (defun get-image-number-as-string (image)
   (second (split-sequence:split-sequence #\_
@@ -193,7 +193,7 @@
 							      "delete"
 							      (get-image-number-as-string image)))
 						   "Delete"))))) 
-	       (edit-bar "All items"))))
+	       :sidebar (edit-bar "All items"))))
 
 (defun edit-front-page ()
   (make-page
@@ -214,12 +214,7 @@
        "Create a new tag")
       ((:a :class "btn btn-primary btn-large pull-right" :href "/edit/tags")
        "Edit an existing tag")))
-   (edit-bar "Edit")))
-
-;; (hunchentoot:define-easy-handler (index-page :uri "/index.html")
-;;     ()
-;;   (standard-page "Welcome to sample store"
-;; 		 (thumbnails (get-random-featured-items 20) #'display-short)))
+   :sidebar (edit-bar "Edit")))
 
 (defun thumbnails (list render-func &optional (items-across 4))
   (let ((rows (partition-list list items-across)))
@@ -230,22 +225,6 @@
 		(let ((span (format nil "span~A" (truncate 12 items-across))))
 		  (htm ((:div :class span)
 			(str (funcall render-func item))))))))))))
-
-;; (defun thumbnails (list render-func &optional (items-across 4))
-;;   (with-html-output-to-string (s)
-;;     (:ul :class "thumbnails"
-;; 	 (dolist (item list)
-;; 	   (htm (:li :class (format nil "span~A" items-across)
-;; 		     (:div :class "thumbnail"
-;; 			   (str (funcall render-func item)))))))))
-
-;; (defun thumbnails (list render-func)
-;;   (with-html-output-to-string (s)
-;;     ((:ul :class "thumbnails")
-;;      (dolist (obj list)
-;;        (htm ((:li :class "span3")
-;; 	     ((:div :class "thumbnail")
-;; 	      (str (funcall render-func obj)))))))))
 
 (defmethod render-very-short ((obj line-item))
   (with-html-output-to-string (s)
@@ -340,70 +319,18 @@
   (format nil "/delete/tag/~A" (webform tag)))
 
 
-;; (defmethod render-thumb-display ((obj line-item))
-;;   (with-html-output-to-string (s)
-;;     (when (images obj)
-;;       (htm (str (display-an-image obj))))
-;;     (:h5 (str (title obj)))
-;;     (:p (str (short-description obj)))
-;;     ))
-
-
-
-
-;; (defun display-tag (tag)
-;;   (when-let ((valid-tag (get-tag tag)))
-;;     (let ((items (get-tagged-items valid-tag)))
-;;       (make-page (tag-name valid-tag)
-;; 		 (thumbnails items #'display-short)
-;; 		 (sample-sidebar valid-tag)))))
-
-;; (hunchentoot:define-easy-handler (display-tag :uri "/display-tag")
-;;     (name)
-;;   (when-let ((valid-tag (get-tag tag)))
-;;     (let ((items (get-tagged-items valid-tag)))
-;;       (make-page (tag-name valid-tag)
-;; 		 (thumbnails items #'display-short)
-;; 		 (sample-sidebar valid-tag)))))
-
-;; (hunchentoot:define-easy-handler (add-to-bundle-page :uri "/add-to-bundle")
-;;     ((bundleadd :parameter-type 'hash-table)
-;;      sku)
-;;   (case (hunchentoot:request-method*)
-;;     (:post (when-let ((bundle (get-item sku))
-;; 		      (items-to-add
-;; 		       (let ((items '())) 
-;; 				   (maphash (lambda (k v)
-;; 					      (when-let (number (parse-integer
-;; 								 v :junk-allowed t))
-;; 						(push (cons (get-item k) number) items)))
-;; 					    bundleadd)
-;; 				   items)))
-;; 	     (dolist (item items-to-add)
-;; 	       (add-item (car item) bundle (cdr item)))
-;; 	     (hunchentoot:redirect (get-url bundle))))))
-
-
-;; (hunchentoot:define-easy-handler (new-single-item :uri "/single-item/new")
-;;     ()
-;;   (case (hunchentoot:request-method*)
-;;     (:get (standard-page "Create new single item" (single-item-form)))
-;;     (:post (maybe-create 'single-item (fix-alist (hunchentoot:post-parameters*))))))
-
 (defun new-item-page ()
-  (make-page "Create new single item" (item-form) (edit-bar "New item")))
+  (make-page "Create new single item" (item-form)
+	     :sidebar (edit-bar "New item")))
 
 (defun edit-item-edit-page (item &optional debug)
   (make-page (format nil "Editing ~A" (sku item))
 	     (with-html-output-to-string (s)
 	       (when debug
 		 (htm (:pre (esc (format nil "~S" debug)))))
-	       ;; (:pre (esc (format nil "~S" (hunchentoot:post-parameters*))))
-	       ;; (:pre (esc (with-output-to-string (string)
-	       ;; 		    (describe hunchentoot:*request* string))))
 	       (str (edit-tabs item "Edit"))
 	       (str (item-form item)))
-	     (edit-bar "All items")))
+	     :sidebar (edit-bar "All items")))
 
 (defun edit-bar (active)
   (nav-tabs `("Items"
@@ -434,15 +361,6 @@
     (nav-tabs (reduce #'append (reverse bar)) active
 	      :class "nav nav-list")))
 
-
-
-  ;; (nav-tabs (append
-  ;; 	     (list "Featured")
-  ;; 	     (tag->nav (featured-tags))
-  ;; 	     (list "Categories")
-  ;; 	     (tag->nav (menu-tags)))
-  ;; 	    active
-  ;; 	    :class "nav nav-list"))
 
 (defun nav-tabs (alist active &key (class "nav nav-tabs"))
   "ALIST cells of the form (URL . LABEL) or plain strings for headers"
@@ -480,9 +398,9 @@
 	     (concatenate 'string
 			  (edit-tabs item "View")
 			  (display-item-content item))
-	     (edit-bar "All items")
-	     (with-html-output-to-string (s)
-	       (:script "$('.carousel').carousel()"))))
+	     :sidebar (edit-bar "All items")
+	     :end-matter (with-html-output-to-string (s)
+			   (:script "$('.carousel').carousel()"))))
 
 
 (defun display-item-content (item)
@@ -494,15 +412,6 @@
       (str (cart-widget item))
       ((:p :class "lead") (str (short-description item)))
       (:p (str (long-description item)))
-
-      ;; ((:div :class "well well-small")
-      ;;  ((:dl :class "dl-horizontal")
-      ;; 	(:dt "Price")
-      ;; 	(:dd (str (print-price (get-price item))))
-      ;; 	(:dt "Weight")
-      ;; 	(:dd (fmt "~A g" (get-weight item))))
-      ;;  )
-      
 
       (when (not (empty? (get-children-qlist item)))
 	(htm (:h5 "Contains")
@@ -536,157 +445,4 @@
 	   ((:a :class "carousel-control right" :href (format nil "#~A" carousel-id)
 		:data-slide "next") (str "&rsaquo;"))))
 	(funcall render-function (first elements)))))
-
-
-
-  ;; (flet ((active? ())))
-
-  ;; (with-html-output-to-string (s)
-  ;;   ((:ul :class "nav nav-tabs")
-  ;;    (:li ((:a href (get-edit-view-url item))
-  ;; 	   "View"))
-  ;;    (:li ((:a :href (get-edit-edit-url item))
-  ;; 	   "Edit"))
-  ;;    (:li ((:a :href (get-edit-image-url item))
-  ;; 	   "Images"))
-  ;;    (:li ((:a :href "#")
-  ;; 	   "Tags"))
-  ;;    (:li ((:a :href "#")
-  ;; 	   "Contents")))))
-
-
-;; (hunchentoot:define-easy-handler (new-single-item :uri "/single-item/new")
-;;     ()
-;;   (case (hunchentoot:request-method*)
-;;     (:get (standard-page "Create new single item" (lambda (stream) (single-item-form stream))))
-;;     (:post (maybe-create 'single-item (fix-alist (hunchentoot:post-parameters*))))))
-
-
-
-
-;; (hunchentoot:define-easy-handler (new-bundle :uri "/bundle/new")
-;;     ()
-;;   (case (hunchentoot:request-method*)
-;;     (:get (standard-page "Create new bundle" (lambda (stream) (bundle-form stream))))
-;;     (:post (maybe-create 'bundle (fix-alist (hunchentoot:post-parameters*))))))
-
-;; (defun edit-display-item (sku)
-;;   (when-let (item (get-item sku))
-;;     (case (hunchentoot:request-method*)
-;;       (:get (make-page (title item)
-;; 		       (lambda (stream)
-;; 			 (with-html-output (s stream)
-;; 			   (funcall (header (store-name *web-store*)
-;; 					    (title item)) s) 
-;; 			   (lightbox-js s)
-;; 			   (funcall (get-tabs item) stream)
-;; 			   (tab-js stream)))
-;; 		       (sample-sidebar item)))
-;;       (:post (maybe-update item (fix-alist (hunchentoot:post-parameters*)))))))
-
-
-;; (hunchentoot:define-easy-handler (display-item :uri "/item") (sku)
-;;   (when-let (item (get-item sku))
-;;     (case (hunchentoot:request-method*)
-;;       (:get (make-page (title item)
-;; 		       (lambda (stream)
-;; 			 (with-html-output (s stream)
-;; 			   (funcall (header (store-name *web-store*)
-;; 					    (title item)) s) 
-;; 			   (lightbox-js s)
-;; 			   (funcall (get-tabs item) stream)
-;; 			   (tab-js stream)))
-;; 		       (sample-sidebar item)))
-;;       (:post (maybe-update item (fix-alist (hunchentoot:post-parameters*)))))))
-
-;; (hunchentoot:define-easy-handler (tag-page :uri "/tags")
-;;     (sku newtag (tags :parameter-type 'hash-table))
-;;   (when-let (item (get-item sku))
-;;     ;; update the tags for this item
-;;     (maphash (lambda (k v)
-;; 	       (when-let (tag (get-tag k))
-;; 		 (if (string-equal v "on")
-;; 		     (tag-item item tag)
-;; 		     (untag-item item tag))))
-;; 	     tags)
-
-;;     ;; create and set a new tag, if one exists
-;;     (when (and newtag (not (zerop (length newtag))))
-;;       (if-let (tag (get-tag (get-webform newtag)))
-;; 	(tag-item item tag)
-;; 	(let ((tag (make-instance 'tag :name newtag)))
-;; 	  (tag-item item tag))))
-;;     (hunchentoot:redirect (get-url item))))
-
-;; (hunchentoot:define-easy-handler (add-to-cart :uri "/shopping-cart")
-;;     (sku number)
-;;   (hunchentoot:log-message* :info "~A" (hunchentoot:post-parameters*))
-;;   (case (hunchentoot:request-method*)
-;;     (:get (display-shopping-cart))
-;;     (:post (let ((item (get-item sku))
-;; 		 (quantity (validate-number number)))
-;; 	     (when (and item quantity)
-;; 	       (hunchentoot:log-message* :debug "Got item ~A~%" item)
-;; 	       (let ((cart (get-or-initialize-cart)))
-;; 		 (add-item item cart quantity))))
-;; 	   (display-shopping-cart))))
-
-;; (hunchentoot:define-easy-handler (single-items-list :uri "/single-items")
-;;     ()
-;;   (standard-page "List of all single items"
-;; 		 (lambda (stream)
-;; 		   (with-html-output (s stream)
-;; 		     ((:div :class "span-24")
-;; 		      (:pre (fmt "~{~A~^~%~}" (hunchentoot:post-parameters*)))
-;; 		      ((:form :method "post" :action "/single-items")
-;; 		       (:input :type "submit" :value "Delete")
-;; 		       (:table
-;; 			(:tr (:th "Delete")
-;; 			     (:th "SKU")
-;; 			     (:th "Item"))
-;; 			(dolist (i (ele:get-instances-by-class 'single-item))
-;; 			  (htm 
-;; 			   (:tr (:td (:input :type "checkbox" :name (sku i)))
-;; 				(:td ((:a :href (get-url i))
-;; 				      (str (sku i))))
-;; 				(:td (str (title i)))))))
-;; 		       (:input :type "submit" :value "Delete")))))))
-
-;; (hunchentoot:define-easy-handler (bundles-list :uri "/bundles")
-;;     ()
-;;   (standard-page "List of all bundles"
-;; 		 (lambda (stream)
-;; 		   (with-html-output (s stream)
-;; 		     ((:div :class "span-24")
-;; 		      (:pre (fmt "~{~A~^~%~}" (hunchentoot:post-parameters*)))
-;; 		      ((:form :method "post" :action "/bundles")
-;; 		       (:input :type "submit" :value "Delete")
-;; 		       (:table
-;; 			(:tr (:th "Delete")
-;; 			     (:th "SKU")
-;; 			     (:th "Item"))
-;; 			(dolist (i (ele:get-instances-by-class 'bundle))
-;; 			  (htm 
-;; 			   (:tr (:td (:input :type "checkbox" :name (sku i)))
-;; 				(:td ((:a :href (get-url i))
-;; 				      (str (sku i))))
-;; 				(:td (str (title i)))))))
-;; 		       (:input :type "submit" :value "Delete")))))))
-
-
-
-;; (hunchentoot:define-easy-handler (display-geo :uri "/geo") (n)
-;;   (when-let (geo (get-geo n))
-;;     (case (hunchentoot:request-method*)
-;;       (:get (make-page (title item)
-;; 		       (lambda (stream)
-;; 			 (with-html-output (s stream)
-;; 			   (funcall (header (store-name *web-store*)
-;; 					    (title item)) s) 
-;; 			   (lightbox-js s)
-;; 			   ;; (funcall (get-tabs item) stream)
-;; 			   (:h1 (str (geo-name geo)))
-;; 			   (tab-js stream)))
-;; 		       (sample-sidebar item)))
-;;       (:post (maybe-update item (fix-alist (hunchentoot:post-parameters*)))))))
 

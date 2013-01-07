@@ -19,6 +19,7 @@
 	       :puri
 	       :cl-html-parse)
   :components ((:file "shopper")
+	       (:file "utilities")
 	       (:file "display-routes")
 	       (:file "edit-routes")
 ;	       (:file "tag-routes")
@@ -39,6 +40,7 @@
 	       (:file "cart")
 	       (:file "customer")
 	       (:file "display")
+	       (:file "navigation")
 	       (:file "pages")
 	       (:file "order")
 	       (:file "geo")

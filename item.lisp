@@ -53,9 +53,6 @@
 		  :type number)
    (geographies :initform nil :accessor geographies
 		:documentation "geographies in which this item is available")
-   ;; (children :initform '() :accessor get-children
-   ;; 	     :documentation "children of this object.  Objects may not
-   ;; 	     contain any reference to themselves")
    (children-qlist :initform (make-instance 'quantity-list)
 		   :accessor get-children-qlist
 		   :documentation "If children exists, this
@@ -76,12 +73,6 @@
   (prog1
       (format nil "~A_~A" (sku item) (image-counter item))
     (incf (image-counter item))))
-
-;; (defmethod get-url ((line-item line-item))
-;;   (url-rewrite:add-get-param-to-url "/item" "sku" (sku line-item)))
-
-;; (defmethod get-edit-view-url ((line-item line-item))
-;;   (format nil "/edit/item/~A/view" (sku line-item)))
 
 (defmethod get-edit-view-url ((line-item line-item))
   (restas:genurl 'shopper-edit:r/edit-item/view :sku (sku line-item)))
@@ -144,5 +135,3 @@
 		   (items *web-store*))
     items))
 
-;; (defmethod get-view-url ((item line-item))
-;;   (format nil "/view/item/~A" (sku item)))
