@@ -3,7 +3,8 @@
 
 (in-package #:shopper)
 
-(defun make-page (title body &key sidebar end-matter (sidebar-span 2) (content-span 10))
+(defun make-page (title body &key sidebar end-matter (sidebar-span 2) (content-span 10)
+		  navigation)
   "each of TITLE BODY and SIDEBAR should return strings.  This
 function just makes sure the right components are included."
   (basic-page title
@@ -14,10 +15,11 @@ function just makes sure the right components are included."
 		   (when sidebar (htm (str sidebar))))
 		  ((:div :class (format nil "span~A" content-span))
 		   (str body))))
-		(when end-matter (str end-matter)))))
+		(when end-matter (str end-matter)))
+	      navigation))
 
 
-(defun basic-page (title body)
+(defun basic-page (title body &optional navigation)
   "each of TITLE BODY and SIDEBAR should return strings.  This
 function just makes sure the right components are included and sets up
 some basic CSS."
@@ -31,7 +33,7 @@ some basic CSS."
      (:body
 
       ((:div :class "container")
-       (str (main-navigation)))
+       (str (main-navigation navigation)))
       (str body)
       (:script :src "http://code.jquery.com/jquery-latest.js")
       (:script :src "/s/js/bootstrap.min.js")))))

@@ -106,7 +106,8 @@
 						  (str (title item))) )
 					    (:p (str (short-description item)))))))))))
 	     
-		(:script "$('.carousel').carousel()"))))
+		(:script "$('.carousel').carousel()"))
+	      "Home"))
 
 (defun get-featured-items (&optional number)
   "If NUMBER is specified, return a list of featured items at most
@@ -160,8 +161,8 @@
       (htm ((:div :class "well") (str (description tag)))))
     (when-let (thumbs (remove-if-not #'published
 				     (ele:pset-list (tag-members tag))))
-      (str (thumbnails thumbs #'render-thumb))))
-    ))
+      (str (thumbnails thumbs #'render-thumb))))))
+
 
 
 ; existing items
@@ -240,10 +241,13 @@
      (when (images obj)
        (htm (str (display-an-image obj)))))
 
-    (when (not edit)
-      (htm (str (cart-widget obj))))
+    (:p :class "lead"
+	((:a :href (get-view-url obj)) (str (title obj)))
+	(when (not edit)
+	  (htm (str (cart-widget obj)))))
+    
+    ;((:a :href (get-view-url obj)) (:h5 (str (title obj))))
 
-    ((:a :href (get-view-url obj)) (:h5 (str (title obj))))
     
     (when edit
       (htm (:p (when (published obj)
@@ -252,7 +256,7 @@
 			(htm ((:span :class "label label-success")
 			      "Featured"))))))))
     
-    
+
     (:p (str (short-description obj))
 	(:br)
 	(:em "Price: ")
@@ -360,25 +364,6 @@
       (push (tag->nav (menu-tags)) bar))
     (nav-tabs (reduce #'append (reverse bar)) active
 	      :class "nav nav-list")))
-
-
-(defun nav-tabs (alist active &key (class "nav nav-tabs"))
-  "ALIST cells of the form (URL . LABEL) or plain strings for headers"
-  (with-html-output-to-string (s)
-    ((:ul :class class)
-     (dolist (item alist)
-       (if (stringp item)
-	   (htm ((:li :class "nav-header") (str item)))
-	   (destructuring-bind (url . label)
-	       item
-	     (if (string-equal label active)
-		 (htm ((:li :class "active")
-		       ((:a :href url)
-			(str label))))
-		 (htm (:li
-		       ((:a :href url)
-			(str label)))))))))))
-
 
 (defmethod edit-tabs ((item line-item) active)
   (nav-tabs `((,(get-edit-view-url item) . "View")

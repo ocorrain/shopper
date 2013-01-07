@@ -12,7 +12,8 @@
     ("/view/tag/:(tag)")
   (if-let (tag-object (get-tag tag))
     (basic-page (tag-name tag-object)
-		(tag-display-page tag-object))
+		(tag-display-page tag-object)
+		(tag-name tag-object))
     hunchentoot:+http-not-found+))
 
 (restas:define-route r/shopping-cart/view ("/shopping-cart")
