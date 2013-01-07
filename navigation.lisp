@@ -10,9 +10,8 @@
 	((:a :href "/") "Home"))
        (:li ((:a :href "#about") "About"))
        (:li ((:a :href "#contact") "Contact"))
-       (:li :class "divider-vertical")
-       (str (tag-dropdown "Featured" (featured-tags)))
-       (str (tag-dropdown "Chocolate!" (menu-tags)))
+       (str (featured-tags-nav))
+       (str (tag-dropdown "More Chocolate!" (menu-tags)))
        (str (navigation-login))))
      (str (navigation-cart)))))
 
@@ -25,6 +24,15 @@
 	  (:li ((:a :href "/logout")
 		"Log out")))
     ""))
+
+(defun featured-tags-nav ()
+  (with-html-output-to-string (s)
+    (dolist (tag-url (tag->nav (featured-tags)))
+      (destructuring-bind (url . label) tag-url
+	(htm (:li ((:a :href url)
+		   (str label))))))))
+
+
 
 (defun tag-dropdown (label tags)
   (with-html-output-to-string (s)

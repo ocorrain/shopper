@@ -139,7 +139,7 @@
 (defun tag->nav (list-of-tags)
   (mapcar (lambda (tag)
 	    (cons (get-view-url tag)
-			 (tag-name tag)))
+		  (tag-name tag)))
 	  list-of-tags))
 
 (defmethod display-an-image ((tag tag) &optional (image-func #'get-thumb-url))
