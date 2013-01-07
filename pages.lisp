@@ -350,7 +350,10 @@
 	      ("/edit/tags/featured" . "Featured tags")
 	      "Geo"
 	      ("/new/geo" . "New geography")
-	      ("/edit/geos" . "All geographies"))
+	      ("/edit/geos" . "All geographies")
+	      "Static content"
+	      ("/new/static" . "New static page")
+	      ("/edit/all/static" . "All static pages"))
 	    active
 	    :class "nav nav-list"))
 

@@ -264,4 +264,8 @@
     (view-item-page item)
     hunchentoot:+http-not-found+))
 
-
+(restas:define-route r/view-static-content
+    ("/view/static/:(contentform)")
+  (if-let (content (get-content-from-webform contentform))
+    (view-static-content-page content)
+    hunchentoot:+http-not-found+))

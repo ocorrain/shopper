@@ -31,10 +31,11 @@
   (basic-page "Log in"
 	      (who:with-html-output-to-string (s)
 ;		(:pre (who:fmt "~S" (hunchentoot:session-value :user)))
-		(:h2 "Sign in")
+		((:div :class "container")
+		 (:h2 "Sign in")
 		(when errors
 		  (who:htm ((:p :class "text-error")
-			"The login details you supplied were incorrect")))
+			    "The login details you supplied were incorrect")))
 		((:form :class "form-horizontal" :method "post" :action (restas:genurl 'login))
 		 ((:div :class "control-group")
 		  ((:label :class "control-label" :for "username")
@@ -51,7 +52,8 @@
 		 ((:div :class "control-group")
 		  ((:div :class "controls")
 		   ((:button :type "submit" :class "btn")
-		    "Sign in")))))))
+		    "Sign in"))))))))
+
 
 
 

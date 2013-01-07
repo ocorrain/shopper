@@ -38,25 +38,6 @@ pixel (but with the original aspect ratio) and save it in THUMBNAME."
 	  
 	  (lisp-magick:magick-write-image wand thumbname)))))
 
-(defun create-thumbnail (filename thumbname width height &optional (frame-color (list 0 0 0)))
-  "Create a thumbnail the image in FILENAME with a max size of WIDTH x HEIGHT
-pixel (but with the original aspect ratio) and save it in THUMBNAME."
-  (if (or (pathnamep filename)
-	  (pathnamep thumbname))
-      (create-thumbnail (namestring filename) (namestring thumbname) width height)
-      (lisp-magick:with-magick-wand (wand :load filename)
-	(lisp-magick:with-pixel-wand (pwand :comp (180 120 132))
-	  (multiple-value-bind (new-width new-height padding-width padding-height)
-	      (get-thumbnail-dimensions (lisp-magick:magick-get-image-width wand)
-					(lisp-magick:magick-get-image-height wand)
-					width height)
-	    (lisp-magick:magick-scale-image wand new-width new-height)
-	    (lisp-magick:magick-frame-image wand pwand 
-	    				    padding-width
-	    				    padding-height
-	    				    0 0))
-	  
-	  (lisp-magick:magick-write-image wand thumbname)))))
 
 (defun get-thumbnail-dimensions (width height box-width box-height)
   (let ((image-aspect (/ width height))

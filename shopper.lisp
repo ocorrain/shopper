@@ -53,7 +53,12 @@
 	   #:edit-item-edit-page
 	   #:update-geos
 	   #:geo-postage-page
-	   #:image-edit-page))
+	   #:image-edit-page
+	   #:static-content
+	   #:get-content-from-webform
+	   #:static-content-edit-page
+	   #:static-content-new-page
+	   #:edit-static-content-page))
 
 
 (in-package #:shopper)

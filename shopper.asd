@@ -39,6 +39,7 @@
 	       (:file "validation")
 	       (:file "cart")
 	       (:file "customer")
+	       (:file "static-content")
 	       (:file "display")
 	       (:file "navigation")
 	       (:file "pages")

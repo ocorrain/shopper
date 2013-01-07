@@ -32,4 +32,6 @@
 	   #:make-tags-page
 	   #:edit-item-edit-page
 	   #:update-geos
-	   #:image-edit-page))
+	   #:image-edit-page
+	   #:get-content-from-webform
+	   #:static-content-edit-page))

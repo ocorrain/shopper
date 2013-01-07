@@ -3,6 +3,8 @@
 
 (in-package #:shopper)
 
+
+
 (defmethod maybe-create ((type (eql 'tag)) parameters)
   (flet ((assoc-val (val) (cdr (assoc val parameters))))
     (if-let (name (validate-as-string (assoc-val 'name)))
@@ -11,12 +13,12 @@
 	  (restas:redirect 'shopper-edit:r/edit-tag/edit :tag (webform tag))
 ;	  (hunchentoot:redirect (get-edit-edit-url tag))
 	  (let ((tag (make-instance 'tag :name name)))
-	    (when (assoc-val 'appearsinmenu)
-	      (setf (appears-in-menu tag) t))
-	    (when (assoc-val 'featured)
-	      (setf (featured tag) t))
-	    (when-let (description (validate-as-string (assoc-val 'description)))
-	      (setf (description tag) description))
+	    (maybe-update tag parameters);;  (when (assoc-val 'appearsinmenu)
+	    ;;   (setf (appears-in-menu tag) t))
+	    ;; (when (assoc-val 'featured)
+	    ;;   (setf (featured tag) t))
+	    ;; (when-let (description (validate-as-string (assoc-val 'description)))
+	    ;;   (setf (description tag) description))
 	    (restas:redirect 'shopper-edit:r/edit-tag/edit :tag (webform tag));; (hunchentoot:redirect (get-edit-edit-url tag))
 	    )))
       (hunchentoot:redirect "/new/tag"))))

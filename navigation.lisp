@@ -1,9 +1,7 @@
 (in-package #:shopper)
 
 (defun main-nav-tabs ()
-  `(("/" . "Home")
-    ("#about" . "About")
-    ("#contact" . "Contact")))
+  `(("/" . "Home")))
 
 (defun main-navigation (&optional navigation)
   (with-html-output-to-string (s)
@@ -11,6 +9,7 @@
      (:img :src "/images/banner.jpg")
      ((:div :class "nav-collapse collapse")
       (str (nav-tabs (append (main-nav-tabs)
+			     (static-content-nav)
 			     (tag->nav (featured-tags))
 			     (nav-dropdown "More Chocolate!"
 					   (tag->nav (menu-tags)))

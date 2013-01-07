@@ -234,3 +234,35 @@
 (restas:define-route store/edit/parameters/post
     ("edit/store" :method :post)
   (edit-store-page (hunchentoot:post-parameters*)))
+
+;; static content
+(restas:define-route static-content-edit
+    ("/edit/static/:(contentform)")
+  (if-let (content (get-content-from-webform contentform))
+    (static-content-edit-page content)))
+
+(restas:define-route static-content-edit/post
+    ("/edit/static/:(contentform)" :method :post)
+  (if-let (content (get-content-from-webform contentform))
+    (progn
+      (maybe-update content (fix-alist (hunchentoot:post-parameters*)))
+      (static-content-edit-page content))))
+
+
+(restas:define-route new-static-content
+    ("/new/static")
+  (static-content-new-page))
+
+(restas:define-route new-static-content/post
+    ("/new/static" :method :post)
+  (maybe-create 'static-content (fix-alist (hunchentoot:post-parameters*))))
+
+(restas:define-route static-content-delete
+    ("static/delete/:(contentform)")
+  (when-let (content (get-content-from-webform contentform))
+    (ele:drop-instance content)
+    (restas:redirect 'static-content-edit-view)))
+
+(restas:define-route static-content-edit-view
+    ("edit/all/static")
+  (edit-static-content-page))
